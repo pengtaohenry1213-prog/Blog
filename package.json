@@ -1,0 +1,27 @@
+{
+  "name": "blog-project",
+  "version": "1.0.0",
+  "description": "个人博客系统 + 后台管理 - Monorepo 项目",
+  "private": true,
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "dev:frontend": "cd packages/frontend && pnpm run dev",
+    "dev:backend": "cd packages/backend && pnpm run dev",
+    "build:frontend": "cd packages/frontend && pnpm run build",
+    "build:backend": "cd packages/backend && pnpm run build",
+    "start:backend": "cd packages/backend && pnpm start",
+    "lint:frontend": "cd packages/frontend && pnpm run lint",
+    "lint:backend": "cd packages/backend && pnpm run lint"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "pnpm": ">=6.11.0"
+  },
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "markdown-it": "^14.1.0"
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "name": "@blog/common",
+  "version": "1.0.0",
+  "description": "henry博客系统共享模块",
+  "main": "index.js",
+  "type": "module",
+  "keywords": [],
+  "author": "",
+  "license": "MIT"
+}
+
