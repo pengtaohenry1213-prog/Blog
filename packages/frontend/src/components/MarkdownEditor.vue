@@ -2,16 +2,25 @@
   <div ref="editorRef" />
 </template>
 <script setup>
-import { ref, onMounted, onBeforeUnmount, watch, defineProps, defineEmits } from 'vue'
+import { ref, onMounted, onBeforeUnmount, watch, defineProps, defineEmits, nextTick } from 'vue'
 import Vditor from 'vditor'
 import 'vditor/dist/index.css'
 
 const editorRef = ref(null)
 let vditor = ref(null)
 // 额外标记编辑器是否已销毁，避免销毁后仍然去调用实例方法
-let isEditorDestroyed = false
-// 标记编辑器是否已完全初始化（after 回调执行后）
-let isEditorReady = false
+const isEditorDestroyed = ref(false)
+// 标记编辑器是否已完全初始化（after 回调执行后）- 改为响应式
+const isEditorReady = ref(false)
+// 标记是否正在同步值，避免循环更新
+const isSyncing = ref(false)
+
+// MessageChannel 和 Worker 相关
+let markdownWorker = null
+let messageChannel = null
+let workerPort = null
+let analysisTimer = null // 防抖定时器
+let isWorkerInitialized = false // 标记 Worker 是否已初始化
 
 // 组件内部通过 defineProps 接收 modelValue（v-model 的默认绑定值）
 const props = defineProps({
@@ -22,31 +31,255 @@ const props = defineProps({
   readonly: {  // 新增：只读模式开关
     type: Boolean,
     default: false
+  },
+  enableAnalysis: {  // 是否启用内容分析（通过 Worker）
+    type: Boolean,
+    default: true
   }
 })
 
 // 组件对外emit
 const emit = defineEmits([
-  'update:modelValue', 'change'
+  'update:modelValue', 
+  'change',
+  'analysis',  // 内容分析结果
+  'validation'  // 内容验证结果
 ])
 
 // 处理只读状态切换的纯函数（分离逻辑）
 const handleReadonlyChange = (val) => {
   if (vditor.value) {
-    // 设置编辑器为只读
-    // vditor.value.disabled();
-
     const _options = { hide: val };
     vditor.value.updateToolbarConfig(_options)
   }
 }
 
-onMounted(() => {
+// 将 readonly 的 watch 移到组件顶层，而不是在 after 回调中注册
+let stopReadonlyWatch = null
+
+/**
+ * 延迟初始化 MessageChannel 和 Worker（按需加载）
+ */
+function initMessageChannel() {
+  // 如果已初始化或不需要分析，直接返回
+  if (isWorkerInitialized || !props.enableAnalysis) {
+    return
+  }
+
+  try {
+    // 创建 MessageChannel
+    messageChannel = new MessageChannel()
+    workerPort = messageChannel.port1
+
+    // 创建 Worker
+    markdownWorker = new Worker(
+      new URL('../workers/markdown-processor.worker.js', import.meta.url),
+      { type: 'module' }
+    )
+
+    // 监听 Worker 消息
+    markdownWorker.onmessage = (event) => {}
+
+    // 监听 Worker 错误
+    markdownWorker.onerror = (error) => {
+      console.error('[MarkdownEditor] Worker error:', error)
+    }
+
+    // 初始化 Worker，传递 MessageChannel 的 port2
+    markdownWorker.postMessage(
+      {
+        type: 'init',
+        port: messageChannel.port2
+      },
+      [messageChannel.port2]
+    )
+
+    // 监听 MessageChannel 端口消息
+    workerPort.onmessage = (event) => {
+      if (!event || !event.data) {
+        console.warn('[MarkdownEditor] Received invalid message:', event)
+        return
+      }
+      const { type, data } = event.data
+      if (!type) {
+        console.warn('[MarkdownEditor] Message missing type:', event.data)
+        return
+      }
+      handleWorkerMessage(type, data)
+    }
+
+    workerPort.onmessageerror = (error) => {
+      console.error('[MarkdownEditor] Port message error:', error)
+    }
+
+    isWorkerInitialized = true
+    console.log('[MarkdownEditor] MessageChannel and Worker initialized')
+  } catch (error) {
+    console.error('[MarkdownEditor] Failed to initialize Worker:', error)
+  }
+}
+
+/**
+ * 处理 Worker 返回的消息
+ */
+function handleWorkerMessage(type, data) {
+  switch (type) {
+    case 'ready':
+      console.log('[MarkdownEditor] Worker ready:', data?.message || 'Worker initialized')
+      break
+
+    case 'analysis':
+      // 发送分析结果给父组件
+      emit('analysis', data)
+      break
+
+    case 'validation':
+      // 发送验证结果给父组件
+      emit('validation', data)
+      break
+
+    case 'keywords':
+      // 关键词提取结果
+      emit('analysis', { keywords: data })
+      break
+
+    case 'error':
+      console.error('[MarkdownEditor] Worker error:', data)
+      break
+
+    default:
+      console.warn('[MarkdownEditor] Unknown message type:', type)
+  }
+}
+
+/**
+ * 发送内容到 Worker 进行分析（带防抖）
+ */
+function analyzeContent(content) {
+  console.warn('analyzeContent content = ', content.length);
+  // 延迟初始化 Worker（按需加载）
+  if (!isWorkerInitialized) {
+    initMessageChannel()
+  }
+
+  if (!props.enableAnalysis || !workerPort || !markdownWorker) {
+    return
+  }
+
+  // 清除之前的定时器
+  if (analysisTimer) {
+    clearTimeout(analysisTimer)
+  }
+
+  // 防抖：500ms 后发送分析请求
+  analysisTimer = setTimeout(() => {
+    if (content && content.trim().length > 0) {
+      // 通过 MessageChannel 发送消息 port1 -> port2(workerPort)
+      workerPort.postMessage({
+        type: 'analyze',
+        data: { content }
+      })
+    }
+  }, 500)
+}
+
+/**
+ * 验证内容（供外部调用）
+ * @param {string} content - 要验证的内容
+ */
+function validateContent(content) {
+  // 延迟初始化 Worker（按需加载）
+  if (!isWorkerInitialized) {
+    initMessageChannel()
+  }
+
+  if (!props.enableAnalysis || !workerPort || !markdownWorker) {
+    return
+  }
+
+  workerPort.postMessage({
+    type: 'validate',
+    data: { content }
+  })
+}
+
+/**
+ * 提取关键词（供外部调用）
+ * @param {string} content - 要分析的内容
+ * @param {number} topN - 返回前 N 个关键词，默认 10
+ */
+function extractKeywords(content, topN = 10) {
+  // 延迟初始化 Worker（按需加载）
+  if (!isWorkerInitialized) {
+    initMessageChannel()
+  }
+
+  if (!props.enableAnalysis || !workerPort || !markdownWorker) {
+    return
+  }
+
+  workerPort.postMessage({
+    type: 'extractKeywords',
+    data: { content, topN }
+  })
+}
+
+// 导出方法供外部使用（通过 ref）
+defineExpose({
+  validateContent,
+  extractKeywords,
+  analyzeContent
+})
+
+/**
+ * 清理 Worker 和 MessageChannel
+ */
+function cleanupWorker() {
+  if (analysisTimer) {
+    clearTimeout(analysisTimer)
+    analysisTimer = null
+  }
+
+  if (workerPort) {
+    workerPort.close()
+    workerPort = null
+  }
+
+  if (markdownWorker) {
+    markdownWorker.terminate()
+    markdownWorker = null
+  }
+
+  messageChannel = null
+  isWorkerInitialized = false
+}
+
+onMounted(async () => {
+  console.log('onMounted');
+
+  // 使用 nextTick 确保 DOM 就绪
+  await nextTick()
+
+  // 不再在挂载时初始化 Worker，改为按需加载
+  // initMessageChannel() // 移除这行
+
+  // 注册只读状态监听（在组件顶层注册，确保可以正确清理）
+  stopReadonlyWatch = watch(
+    () => props.readonly,
+    (val) => {
+      // 只有在编辑器就绪后才处理
+      if (isEditorReady.value) {
+        handleReadonlyChange(val)
+      }
+    },
+    { immediate: false } // 不在初始化时执行，等 after 回调中手动处理
+  )
+
   // new Vditor(id, {options...})
   vditor.value = new Vditor(editorRef.value, {
     mode: 'wysiwyg', // 所见即所得模式
+    width: '100%',
     height: 500,
-    readonly: props.readonly,  // 核心：设置只读模式
     toolbarConfig: {
       pin: true
     },
@@ -66,23 +299,50 @@ onMounted(() => {
       }
     },
     input: (value) => {
-      if (!props.readonly) {
-        console.log(38, ', ', value);
+      if (!props.readonly && !isSyncing.value) {
         // 当编辑器内容变化时，通过 input 事件触发 emit('update:modelValue', value)，这会自动更新父组件的 form.content
         emit('update:modelValue', value)
         emit('change', value)
+        
+        // 发送内容到 Worker 进行分析（防抖处理，会自动初始化 Worker）
+        analyzeContent(value)
       }
     },
     // 实例化完成的回调（关键：确保实例就绪后再处理）
+    // 注: after 回调的目的是将父组件传入的值同步到编辑器，而不是更新父组件
     after: () => {
       // 标记编辑器已完全初始化
-      isEditorReady = true
-      // 注册只读状态监听（仅在实例化后执行）
-      watch(
-        () => props.readonly,
-        handleReadonlyChange,
-        { immediate: true } // 初始化时同步一次
-      )
+      isEditorReady.value = true
+      
+      console.log('after 1: isEditorReady = ', isEditorReady.value);
+
+      // 初始化时同步只读状态
+      handleReadonlyChange(props.readonly)
+
+      // 确保 props.modelValue 的内容同步到编辑器
+      // 设置 isSyncing 标志，避免触发 input 事件导致循环更新
+      if (vditor.value && props.modelValue) {
+        try {
+          isSyncing.value = true
+          const currentValue = vditor.value.getValue()
+          if (currentValue !== props.modelValue) {
+            vditor.value.setValue(props.modelValue)
+            console.log('[MarkdownEditor] 在 after 回调中同步了 modelValue 到编辑器')
+          }
+        } catch (e) {
+          console.error('[MarkdownEditor] 在 after 回调中设置值失败，尝试直接设置：', e)
+          try {
+            vditor.value.setValue(props.modelValue)
+          } catch (innerErr) {
+            console.error('[MarkdownEditor] 直接设置值也失败：', innerErr)
+          }
+        } finally {
+          // 使用 nextTick 确保 setValue 完成后再重置标志
+          nextTick(() => {
+            isSyncing.value = false
+          })
+        }
+      }
     }
   })
 })
@@ -91,31 +351,79 @@ onMounted(() => {
 watch(
   () => props.modelValue,
   (val) => {
+    console.warn('watch modelValue val = ', val.length, ', props.enableAnalysis = ', props.enableAnalysis);
+    console.warn('isEditorReady = ', isEditorReady.value);
+    console.warn('isEditorDestroyed = ', isEditorDestroyed.value);
+    console.warn('isSyncing = ', isSyncing.value);
+
     // 编辑器尚未初始化、未就绪或已被销毁时，不再同步
-    if (!vditor.value || !isEditorReady || isEditorDestroyed) return
+    if (!vditor.value || !isEditorReady.value || isEditorDestroyed.value) {
+      return
+    }
+
+    // 如果正在同步，跳过（避免循环更新）
+    if (isSyncing.value) {
+      return
+    }
 
     try {
       // 只有在编辑器完全就绪后才调用 getValue()，避免内部依赖未初始化导致的错误
       const currentValue = vditor.value.getValue()
+      
+      // 只有当值真正不同时才更新
       if (currentValue !== val) {
+        isSyncing.value = true
         vditor.value.setValue(val || '')
+        // 使用 nextTick 确保 setValue 完成后再重置标志
+        nextTick(() => {
+          isSyncing.value = false
+        })
       }
     } catch (e) {
       // 某些情况下 Vditor 内部依赖（如 VditorDOM2Md）可能尚未就绪或已被清理
       // 避免直接抛错导致 Uncaught (in promise)，这里做一次兜底同步
       console.error('[MarkdownEditor] 更新内容时发生错误，已跳过比较直接设置值：', e)
       try {
+        isSyncing.value = true
         vditor.value.setValue(val || '')
+        nextTick(() => {
+          isSyncing.value = false
+        })
       } catch (innerErr) {
         console.error('[MarkdownEditor] 设置内容失败：', innerErr)
+        isSyncing.value = false
       }
     }
   }
 )
 
-onBeforeUnmount(()=>{
-  isEditorDestroyed = true
-  isEditorReady = false
+// 监听编辑器就绪状态，执行初始化逻辑
+watch(
+  () => isEditorReady.value,
+  (ready) => {
+    if (ready && props.modelValue && props.enableAnalysis) {
+      // 编辑器就绪后，分析初始内容
+      nextTick(() => {
+        analyzeContent(props.modelValue)
+      })
+    }
+  }
+)
+
+onBeforeUnmount(() => {
+  isEditorDestroyed.value = true
+  isEditorReady.value = false
+  
+  // 停止 readonly 的 watch
+  if (stopReadonlyWatch) {
+    stopReadonlyWatch()
+    stopReadonlyWatch = null
+  }
+  
+  // 清理 Worker 和 MessageChannel
+  cleanupWorker()
+  
+  // 销毁编辑器
   vditor.value?.destroy()
   vditor.value = null
 })

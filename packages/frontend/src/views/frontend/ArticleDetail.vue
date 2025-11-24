@@ -12,7 +12,11 @@
       </template>
       <!-- <div class="article-content" v-html="article.content"></div> -->
       <div class="article-content">
-        <MarkdownEditor v-model="article.content" :readonly="true" />
+        <MarkdownEditor 
+          v-model="article.content" 
+          :readonly="true"
+          :enable-analysis="false"
+        />
       </div>
     </el-card>
     <el-empty v-else description="文章不存在" />

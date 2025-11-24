@@ -23,7 +23,64 @@
           />
         </el-form-item>
         <el-form-item label="内容" prop="content">
-          <MarkdownEditor v-model="form.content" />
+          <MarkdownEditor 
+            v-show="form.content.length > 0"
+            v-model="form.content" 
+            @analysis="handleAnalysis"
+            @validation="handleValidation"
+          />
+
+          <!-- 内容分析结果展示 -->
+          <div v-if="contentAnalysis" class="content-analysis">
+            <!-- <el-divider content-position="left">内容分析</el-divider> -->
+            <div class="analysis-stats">
+              <el-tag size="small">字数: {{ contentAnalysis.wordCount }}</el-tag>
+              <el-tag size="small">字符: {{ contentAnalysis.charCount }}</el-tag>
+              <el-tag size="small">段落: {{ contentAnalysis.paragraphCount }}</el-tag>
+              <el-tag size="small">标题: {{ contentAnalysis.headingCount }}</el-tag>
+              <el-tag size="small">链接: {{ contentAnalysis.linkCount }}</el-tag>
+              <el-tag size="small">图片: {{ contentAnalysis.imageCount }}</el-tag>
+              <el-tag size="small">代码块: {{ contentAnalysis.codeBlockCount }}</el-tag>
+              <el-tag size="small" type="info">预计阅读: {{ contentAnalysis.readingTime }} 分钟</el-tag>
+            </div>
+            <div v-if="contentAnalysis.keywords && contentAnalysis.keywords.length > 0" class="keywords">
+              <strong>关键词：</strong>
+              <el-tag 
+                v-for="kw in contentAnalysis.keywords" 
+                :key="kw.word" 
+                size="small" 
+                type="success"
+                style="margin-left: 5px;"
+              >
+                {{ kw.word }} ({{ kw.count }})
+              </el-tag>
+            </div>
+          </div>
+          <!-- 内容验证结果展示 -->
+          <div v-if="contentValidation" class="content-validation">
+            <el-alert
+              v-if="!contentValidation.valid"
+              :title="`发现 ${contentValidation.errors.length} 个错误`"
+              type="error"
+              :closable="false"
+              style="margin-top: 10px;"
+            >
+              <ul style="margin: 5px 0; padding-left: 20px;">
+                <li v-for="(error, index) in contentValidation.errors" :key="index">{{ error }}</li>
+              </ul>
+            </el-alert>
+            <el-alert
+              v-if="contentValidation.warnings && contentValidation.warnings.length > 0"
+              :title="`发现 ${contentValidation.warnings.length} 个警告`"
+              type="warning"
+              :closable="false"
+              style="margin-top: 10px;"
+            >
+              <ul style="margin: 5px 0; padding-left: 20px;">
+                <li v-for="(warning, index) in contentValidation.warnings" :key="index">{{ warning }}</li>
+              </ul>
+            </el-alert>
+          </div>
         </el-form-item>
         <el-form-item label="分类" prop="category_id">
           <el-select v-model="form.category_id" placeholder="请选择分类" clearable>
@@ -69,6 +126,10 @@ const form = reactive({
   status: 'draft'
 });
 
+// 内容分析结果
+const contentAnalysis = ref(null);
+const contentValidation = ref(null);
+console.log('contentAnalysis', contentAnalysis.value);
 const rules = {
   title: [{ required: true, message: '请输入文章标题', trigger: 'blur' }],
   content: [{ required: true, message: '请输入文章内容', trigger: 'blur' }]
@@ -86,6 +147,7 @@ async function loadArticle() {
       category_id: article.category_id,
       status: article.status
     });
+    console.log('form', form);
   } catch (error) {
     ElMessage.error('加载文章失败');
     router.push('/admin/articles');
@@ -120,6 +182,17 @@ function handleCancel() {
   router.push('/admin/articles');
 }
 
+// 处理内容分析结果
+function handleAnalysis(data) {
+  console.warn('handleAnalysis', data);
+  contentAnalysis.value = data;
+}
+
+// 处理内容验证结果
+function handleValidation(data) {
+  contentValidation.value = data;
+}
+
 onMounted(() => {
   loadArticle();
 });
@@ -128,6 +201,28 @@ onMounted(() => {
 <style scoped>
 .article-form {
   padding: 20px;
+}
+
+.content-analysis {
+  margin-top: 5px;
+  padding: 5px;
+  background-color: #f5f7fa;
+  border-radius: 4px;
+}
+
+.analysis-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.keywords {
+  margin-top: 10px;
+  font-size: 14px;
+}
+
+.content-validation {
+  margin-top: 10px;
 }
 </style>
 
