@@ -11,33 +11,57 @@
 
 ## 项目结构（monorepo）
 ```
-blog-project/
-├── packages/               # 子包目录
-│   ├── frontend/           # 前端项目
-│   |   ├── public/
-│   |   └── src/
-│   |       ├── utils/
-│   |       │   └── security.js  # 前端签名、加密工具
-│   ├── backend/            # 后端项目
-│   │   ├── modules/          # 业务模块拆分
-│   │   ├── config/           # 环境配置
-│   │   ├── logs/             # 日志目录（挂载数据卷）
-│   │   └── utils/            # 工具函数（含加密、签名等）
-│   └── common/             # 共享模块（类型定义、工具函数等）
-│           ├── README.md
-│           ├── package.json
-│           ├── index.js       # 入口文件
-│           ├── types/
-│           └── index.js       # 类型定义
+Blog/
+├── .vscode/                  # VS Code 调试 & 工作区配置
+│   ├── launch.json           # 调试配置（前后端 / Docker 等）
+│   ├── settings.json         # 工作区级别编辑器配置
+│   └── README.md             # 本地开发 & 调试说明
 ├── docker/                 # Docker 配置
 │   ├── frontend/           # 前端镜像配置
 │   ├── backend/            # 后端镜像配置
 │   └── docker-compose.yml  # 容器编排配置
 |   ├── nginx/
 |   │   └── nginx.conf        # 新增 Nginx 详细配置（含 Gzip、缓存）
-├── .gitignore              # Git 忽略文件
-├── package.json            # 根项目配置（workspace 管理）
-└── README.md               # 项目说明
+│   ├── backup/               # 预构建镜像 / 数据备份（可选）
+│   ├── scripts/              # 容器启动 / 初始化脚本
+│   ├── docker-compose.yml    # 生产 / 本地环境编排
+│   └── README.md             # 容器化部署说明
+├── docs/                     # 文档中心
+│   ├── start.md              # 启动指南
+│   ├── architecture.md       # 架构设计
+│   ├── deployment.md         # 部署手册
+│   ├── optimization.md       # 性能与安全优化
+│   ├── development.md        # 开发规范与约定
+│   └── workflow.md           # 团队协作工作流
+├── packages/                 # 子包目录（monorepo workspace）
+│   ├── frontend/             # 前端项目（Vue3 + Vite）
+│   │   ├── public/
+│   │   ├── src/
+│   │   │   ├── api/          # 前端接口封装
+│   │   │   ├── views/        # 页面（前台 + 后台）
+│   │   │   ├── components/   # 通用组件（含图表、Markdown 编辑器）
+│   │   │   ├── stores/       # Pinia 状态管理
+│   │   │   └── utils/        # 工具函数（含前端签名、加密等）
+│   │   └── vite.config.js
+│   ├── backend/              # 后端项目（Node.js + Express + Sequelize）
+│   │   ├── app.js            # 后端入口
+│   │   ├── config/           # 环境 & 数据库 & Redis 配置
+│   │   ├── modules/          # 业务模块（文章 / 用户 / 统计 / 鉴权等）
+│   │   ├── models/           # Sequelize 模型定义
+│   │   ├── middleware/       # 中间件（鉴权 / 日志 / 限流 / 校验等）
+│   │   ├── scripts/          # 数据库初始化 & 索引维护脚本
+│   │   ├── logs/             # 日志目录（挂载到宿主机）
+│   │   └── utils/            # 工具函数（加密、签名、日志封装等）
+│   └── common/               # 前后端共享模块
+│       ├── package.json
+│       ├── index.js          # 入口文件
+│       ├── types/            # 类型 / 接口定义
+│       └── utils/            # 公共工具函数
+├── env                       # 环境变量示例 / 模板（如本地开发 env）
+├── pnpm-workspace.yaml       # pnpm workspaces 配置
+├── package.json              # 根项目配置（workspace 管理）
+├── pnpm-lock.yaml
+└── README.md                 # 项目说明（当前文件）
 ```
 
 ## 功能概览

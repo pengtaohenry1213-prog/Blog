@@ -6,7 +6,6 @@ import logger from '../utils/logger.js';
  * JWT 认证中间件
  */
 export async function authenticate(req, res, next) {
-  console.log('authenticate req = ', req);
   try {
     const token = extractToken(req);
     
@@ -38,9 +37,9 @@ export async function authenticate(req, res, next) {
     req.user = user;
     req.userId = user.id;
 
-    console.log('authenticate user = ', user);
-    console.log('authenticate req.user = ', req.user);
-    console.log('authenticate req.userId = ', req.userId);
+    // console.log('authenticate user = ', user);
+    // console.log('authenticate req.user = ', req.user);
+    // console.log('authenticate req.userId = ', req.userId);
     next();
   } catch (error) {
     logger.error(`Authentication error: ${error.message}`);

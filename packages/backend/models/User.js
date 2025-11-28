@@ -10,7 +10,6 @@ const User = sequelize.define('User', {
   username: {
     type: DataTypes.STRING(50),
     allowNull: false,
-    unique: true,
     comment: '用户名'
   },
   password: {
@@ -21,7 +20,6 @@ const User = sequelize.define('User', {
   email: {
     type: DataTypes.STRING(100),
     allowNull: true,
-    unique: true,
     comment: '邮箱'
   },
   role: {

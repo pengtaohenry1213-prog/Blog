@@ -22,6 +22,29 @@ let workerPort = null
 let analysisTimer = null // 防抖定时器
 let isWorkerInitialized = false // 标记 Worker 是否已初始化
 
+// 图表相关：用于插入 ECharts 配置代码块
+const defaultChartBlock = `\`\`\`echarts
+{
+  "title": {
+    "text": "示例折线图"
+  },
+  "xAxis": {
+    "type": "category",
+    "data": ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+  },
+  "yAxis": {
+    "type": "value"
+  },
+  "series": [
+    {
+      "type": "line",
+      "data": [150, 230, 224, 218, 135, 147, 260]
+    }
+  ]
+}
+\`\`\`
+`
+
 // 组件内部通过 defineProps 接收 modelValue（v-model 的默认绑定值）
 const props = defineProps({
   modelValue: {
@@ -78,7 +101,7 @@ function initMessageChannel() {
     )
 
     // 监听 Worker 消息
-    markdownWorker.onmessage = (event) => {}
+    markdownWorker.onmessage = (event) => { console.log('markdownWorker.onmessage -> event: ', event); }
 
     // 监听 Worker 错误
     markdownWorker.onerror = (error) => {
@@ -283,6 +306,41 @@ onMounted(async () => {
     toolbarConfig: {
       pin: true
     },
+    toolbar: [
+      'headings',
+      'bold',
+      'italic',
+      'strike',
+      'link',
+      '|',
+      'list',
+      'ordered-list',
+      'check',
+      '|',
+      'quote',
+      'code',
+      'inline-code',
+      'table',
+      'upload',
+      '|',
+      'undo',
+      'redo',
+      'fullscreen',
+      '|',
+      {
+        name: 'insert-echarts',
+        tip: '插入图表（ECharts）',
+        icon: '<svg viewBox="0 0 1024 1024" width="16" height="16"><path d="M192 832h640v64H192zM256 576h96v192h-96zM464 416h96v352h-96zM672 256h96v512h-96z" fill="currentColor"/></svg>',
+        click: () => {
+          if (!vditor.value || props.readonly) return
+          try {
+            vditor.value.insertValue(`\n${defaultChartBlock}\n`)
+          } catch (e) {
+            console.error('[MarkdownEditor] 插入图表代码块失败：', e)
+          }
+        }
+      }
+    ],
     // lang: 'zh-CN',
     customWysiwygToolbar: (toolbar) => {
       return toolbar;

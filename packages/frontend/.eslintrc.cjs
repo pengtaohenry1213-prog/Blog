@@ -13,7 +13,7 @@ module.exports = {
     './.eslintrc-auto-import.json' // 引入自动导入的全局变量声明
   ],
   parserOptions: {
-    ecmaVersion: 2021,
+    ecmaVersion: 2022, // 使用 ECMAScript 2022 版本的语法 [支持 顶层await]
     sourceType: 'module'
   },
   rules: {

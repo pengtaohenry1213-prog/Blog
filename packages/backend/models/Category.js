@@ -10,7 +10,6 @@ const Category = sequelize.define('Category', {
   name: {
     type: DataTypes.STRING(50),
     allowNull: false,
-    unique: true,
     comment: '分类名称'
   },
   description: {
@@ -21,7 +20,6 @@ const Category = sequelize.define('Category', {
   slug: {
     type: DataTypes.STRING(100),
     allowNull: false,
-    unique: true,
     comment: '分类别名（URL友好）'
   },
   sort: {
@@ -33,8 +31,19 @@ const Category = sequelize.define('Category', {
   tableName: 'categories',
   timestamps: true,
   createdAt: 'created_at',
-  updatedAt: 'updated_at'
+  updatedAt: 'updated_at',
+  indexes: [
+    {
+      name: 'idx_categories_name',
+      unique: true,
+      fields: ['name']
+    },
+    {
+      name: 'idx_categories_slug',
+      unique: true,
+      fields: ['slug']
+    }
+  ]
 });
 
 export default Category;
-

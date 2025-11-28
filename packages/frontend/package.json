@@ -20,6 +20,7 @@
     "@blog/common": "workspace:*",
     "@element-plus/icons-vue": "^2.3.1",
     "axios": "^1.6.5",
+    "echarts": "^5.5.0",
     "element-plus": "^2.5.4",
     "pinia": "^2.1.7",
     "vditor": "^3.11.2",

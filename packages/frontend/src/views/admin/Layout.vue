@@ -29,7 +29,19 @@
         </div>
       </el-header>
       <el-main class="main">
-        <router-view />
+        <Suspense>
+          <template #default>
+            <router-view />
+          </template>
+          <template #fallback>
+            <div class="loading-container">
+              <el-icon class="is-loading">
+                <Loading />
+              </el-icon>
+              <span>加载中......</span>
+            </div>
+          </template>
+        </Suspense>
       </el-main>
     </el-container>
   </el-container>
@@ -39,7 +51,7 @@
 import { computed } from 'vue';
 import { useRoute } from 'vue-router';
 import { useAuthStore } from '@/stores/auth';
-import { DataBoard, Document, User } from '@element-plus/icons-vue';
+import { DataBoard, Document, User, Loading } from '@element-plus/icons-vue';
 
 const route = useRoute();
 const authStore = useAuthStore();
@@ -105,6 +117,29 @@ function handleLogout() {
 .main {
   background: #f0f2f5;
   padding: 20px;
+}
+
+.loading-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  gap: 8px;
+  color: #909399;
+  font-size: 14px;
+}
+
+.loading-container .is-loading {
+  animation: rotating 2s linear infinite;
+}
+
+@keyframes rotating {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
 }
 </style>
 

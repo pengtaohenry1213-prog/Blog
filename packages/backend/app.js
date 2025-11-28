@@ -97,6 +97,7 @@ import { apiLimiter } from './middleware/rateLimiter.js'; // 导入限流器中�
 import articleRouter from './modules/article/router.js'; // 文章路由
 import userRouter from './modules/user/router.js'; // 用户路由
 import authRouter from './modules/auth/router.js'; // 认证路由
+import statsRouter from './modules/stats/router.js'; // 统计路由
 
 const app = express();
 const PORT = config.server.port;
@@ -108,7 +109,6 @@ app.use(express.json()); // 解析请求体(JSON)
 app.use(express.urlencoded({ extended: true })); // 解析请求体(URL 编码)
 app.use(requestLogger); // 请求日志（requestLogger）
 app.use('/api', apiLimiter); // API 限流控制（apiLimiter）
-
 
 // API 文档系统（Swagger）: swagger-jsdoc + swagger-ui-express
 import swaggerJsdoc from 'swagger-jsdoc';
@@ -214,6 +214,7 @@ app.get('/api/health', async (req, res) => {
 app.use('/api/articles', articleRouter); // 文章模块, 文章 CRUD、搜索、分类等
 app.use('/api/users', userRouter); // 用户模块, 用户注册、登录、信息管理
 app.use('/api/auth', authRouter); // 认证模块, 身份认证、权限控制、Token 管理
+app.use('/api/stats', statsRouter); // 统计模块, 数据统计、图表数据等
 
 // 错误处理
 app.use(notFoundHandler);   // 处理 404 错误
@@ -228,7 +229,7 @@ async function startServer() {
 
     // ✅ 同步 Sequelize 模型（开发环境）
     if (config.env === 'development') {
-      // await sequelize.sync({ alter: true });
+      await sequelize.sync({ alter: true });
       logger.info('数据库模型已同步');
     }
 

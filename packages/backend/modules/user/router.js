@@ -28,8 +28,8 @@ import { body, param, query } from 'express-validator'; // express 请求验证
 import { validate } from '../../middleware/validator.js';
 
 
-import { formatDate } from '@blog/common';
-console.log('formatDate = ', typeof formatDate);
+// import { formatDate } from '@blog/common';
+// console.log('formatDate = ', typeof formatDate);
 
 const router = express.Router();
 
