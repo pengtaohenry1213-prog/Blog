@@ -278,7 +278,6 @@ function cleanupWorker() {
 }
 
 onMounted(async () => {
-  console.log('onMounted');
 
   // 使用 nextTick 确保 DOM 就绪
   await nextTick()

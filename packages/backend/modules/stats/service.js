@@ -1,7 +1,7 @@
 import Article from '../../models/Article.js';
 import User from '../../models/User.js';
 import { Op, fn, col } from 'sequelize';
-import sequelize from '../../config/database.js';
+// import sequelize from '../../config/database.js';
 import debug from 'debug';
 
 
@@ -11,8 +11,8 @@ const debugStatsCategory = debug('app:stats:category');
 
 class StatsService {
   /**
-   * 获取概览统计数据
-   * 返回: {
+   * getOverview: 获取概览统计数据, 返回: 
+   * {
    *   totalArticles: 总文章数,
    *   publishedArticles: 已发布文章数,
    *   totalUsers: 总用户数,
@@ -24,7 +24,6 @@ class StatsService {
    * }
    */
   async getOverview() {
-    
     // 获取基础统计数据
     const [totalArticles, publishedArticles, totalUsers, viewsResult] = await Promise.all([
       Article.count(),

@@ -5,7 +5,7 @@
 - Node.js >= 18.0.0
 - pnpm >= 6.11.0
 - Docker >= 20.10.0
-- Docker Compose >= 2.0.0
+<!-- - Docker Compose >= 2.0.0 -->
 
 ## 二、本地开发环境启动
 

@@ -54,6 +54,7 @@
 </template>
 
 <script setup>
+console.warn('===== 这里是SPA Vue3 首页 =====');
 import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { articleApi } from '@/api';
@@ -61,7 +62,6 @@ import { articleApi } from '@/api';
 
 import { isValidEmail } from '@blog/common';
 console.log('@blog/common isValidEmail: ', typeof isValidEmail);
-
 
 const router = useRouter();
 const articleList = ref([]);
@@ -72,6 +72,8 @@ const pagination = ref({
   pageSize: 10,
   total: 0
 });
+
+console.log('[frontend/src/views/frontend/Home.vue] router: ', router);
 
 async function loadArticles() {
   try {

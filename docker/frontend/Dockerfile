@@ -5,7 +5,7 @@ FROM node:lts-alpine AS builder
 WORKDIR /app
 
 # 安装 pnpm
-RUN npm install -g pnpm@6.11.0
+RUN npm install -g pnpm@latest
 
 # 复制根目录的 workspace 配置文件
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./

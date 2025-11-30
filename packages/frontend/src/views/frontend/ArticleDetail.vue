@@ -4,7 +4,7 @@
       <template #header>
         <h1>{{ article.title }}</h1>
         <div class="article-meta">
-          <span>作者：{{ article.author?.username }}</span>
+          <span>作者2：{{ article.author?.username }}</span>
           <span>发布时间：{{ formatDate(article.publish_time) }}</span>
           <span>阅读量：{{ article.read_count }}</span>
           <el-tag v-if="article.category" size="small">{{ article.category.name }}</el-tag>
@@ -24,13 +24,14 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, onUnmounted } from 'vue';
 import { useRoute } from 'vue-router';
 import { articleApi } from '@/api';
 // import { ElMessage } from 'element-plus'; // 这些 import 可以移除（插件会自动处理）
 
 // import MarkdownEditor from '@/components/MarkdownEditor.vue'
 import { defineAsyncComponent } from 'vue';
+
 // 只在需要时展示的弹窗/大型组件, 也用懒加载：
 const MarkdownEditor = defineAsyncComponent(() =>
   import('@/components/MarkdownEditor.vue')
@@ -40,6 +41,7 @@ const route = useRoute();
 const article = ref(null);
 
 async function loadArticle() {
+  console.error('===== 这里是 SPA Vue3 文章详情页 loadArticle =====');
   try {
     article.value = await articleApi.getDetail(route.params.id);
   } catch (error) {
@@ -54,6 +56,11 @@ function formatDate(date) {
 
 onMounted(() => {
   loadArticle();
+});
+
+onUnmounted(() => {
+  // 清空变量, 避免内存泄漏
+  article.value = null;
 });
 </script>
 

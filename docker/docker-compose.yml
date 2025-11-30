@@ -80,7 +80,33 @@ services:
       start_period: 40s
     restart: unless-stopped
 
-  # 前端服务
+  # Nuxt3 SSR 服务（首页）
+  nuxt:
+    build:
+      context: ..
+      dockerfile: docker/nuxt/Dockerfile
+      args:
+        NUXT_PUBLIC_API_BASE_URL: ${NUXT_PUBLIC_API_BASE_URL:-http://backend:3001/api}
+    container_name: blog-nuxt
+    environment:
+      NODE_ENV: production
+      NUXT_PUBLIC_API_BASE_URL: ${NUXT_PUBLIC_API_BASE_URL:-http://backend:3001/api}
+    ports:
+      - "${NUXT_PORT:-3000}:3000"
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - blog-network
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3000', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    restart: unless-stopped
+
+  # 前端服务（Vue3 SPA，其他页面）
   frontend:
     build:
       context: ..

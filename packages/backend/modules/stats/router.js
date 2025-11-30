@@ -1,6 +1,6 @@
 import express from 'express';
 import statsController from './controller.js';
-import { authenticate } from '../../middleware/auth.js';
+import { authenticate } from '../../middleware/auth.js'; // JWT 认证中间件
 
 const router = express.Router();
 
@@ -47,4 +47,3 @@ const router = express.Router();
 router.get('/overview', authenticate, statsController.getOverview);
 
 export default router;
-

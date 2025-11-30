@@ -1,0 +1,61 @@
+module.exports = {
+  root: true,
+  env: {
+    browser: true,
+    node: true,
+    es2022: true,
+  },
+  parser: 'vue-eslint-parser',
+  parserOptions: {
+    ecmaVersion: 2022,
+    sourceType: 'module',
+  },
+  extends: [
+    'plugin:vue/vue3-recommended',
+  ],
+  rules: {
+    // 允许使用 Nuxt 的全局函数
+    'no-undef': 'off',
+  },
+  globals: {
+    defineNuxtPlugin: 'readonly',
+    defineNuxtConfig: 'readonly',
+    definePageMeta: 'readonly',
+    useNuxtApp: 'readonly',
+    navigateTo: 'readonly',
+    useRoute: 'readonly',
+    useRouter: 'readonly',
+    useFetch: 'readonly',
+    useAsyncData: 'readonly',
+    useState: 'readonly',
+    useCookie: 'readonly',
+    useRuntimeConfig: 'readonly',
+    useHead: 'readonly',
+    useSeoMeta: 'readonly',
+    useRequestHeaders: 'readonly',
+    useRequestURL: 'readonly',
+    // Vue 3 全局函数
+    defineComponent: 'readonly',
+    defineProps: 'readonly',
+    defineEmits: 'readonly',
+    defineExpose: 'readonly',
+    withDefaults: 'readonly',
+    // Vue 3 Composition API
+    ref: 'readonly',
+    reactive: 'readonly',
+    computed: 'readonly',
+    watch: 'readonly',
+    watchEffect: 'readonly',
+    onMounted: 'readonly',
+    onUnmounted: 'readonly',
+    onBeforeMount: 'readonly',
+    onBeforeUnmount: 'readonly',
+    onUpdated: 'readonly',
+    onBeforeUpdate: 'readonly',
+    provide: 'readonly',
+    inject: 'readonly',
+    nextTick: 'readonly',
+    h: 'readonly',
+  },
+};
+

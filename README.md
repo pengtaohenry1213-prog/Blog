@@ -8,6 +8,7 @@
 - **后端**：Node.js(LTS) + Express + Sequelize(ORM)
 - **数据存储**：MySQL（主数据） + Redis（缓存）
 - **部署**：Docker + Nginx + HTTPS
+- **API文档**: Swagger2
 
 ## 项目结构（monorepo）
 ```

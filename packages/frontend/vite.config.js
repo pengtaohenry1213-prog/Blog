@@ -63,8 +63,8 @@ export default defineConfig({
     minify: 'terser', // 使用 terser 进行更好的压缩
     terserOptions: {
       compress: {
-        drop_console: true, // 生产环境移除 console
-        drop_debugger: true, // 移除 debugger
+        drop_console: false, // 生产环境移除 console
+        drop_debugger: false, // 移除 debugger
       },
     },
     // 优化：启用 CSS 代码分割
