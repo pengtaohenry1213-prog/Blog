@@ -3,8 +3,12 @@
 ## 项目简介
 一个基于全栈技术栈的个人博客系统，包含前台展示与后台管理功能，采用前后端分离架构，通过Docker容器化部署，支持线上环境稳定运行。
 
+**性能优化**：首页采用 Nuxt 3 SSR（服务端渲染）提升首屏加载速度和 SEO 效果，其他页面保持 Vue3 SPA 模式，兼顾性能与开发效率。
+
 ## 核心技术栈
-- **前端**：Vue3 + Vite + Vue Router + Pinia + Element Plus
+- **前端**：
+  - **主应用**：Vue3 + Vite + Vue Router + Pinia + Element Plus（SPA 模式）
+  - **首页 SSR**：Nuxt 3 + Pinia + Element Plus（服务端渲染）
 - **后端**：Node.js(LTS) + Express + Sequelize(ORM)
 - **数据存储**：MySQL（主数据） + Redis（缓存）
 - **部署**：Docker + Nginx + HTTPS
@@ -20,9 +24,9 @@ Blog/
 ├── docker/                 # Docker 配置
 │   ├── frontend/           # 前端镜像配置
 │   ├── backend/            # 后端镜像配置
-│   └── docker-compose.yml  # 容器编排配置
-|   ├── nginx/
-|   │   └── nginx.conf        # 新增 Nginx 详细配置（含 Gzip、缓存）
+│   ├── nuxt/               # Nuxt SSR 镜像配置
+│   ├── nginx/              # Nginx 配置
+│   │   └── nginx.conf        # Nginx 详细配置（含 Gzip、缓存、路由转发）
 │   ├── backup/               # 预构建镜像 / 数据备份（可选）
 │   ├── scripts/              # 容器启动 / 初始化脚本
 │   ├── docker-compose.yml    # 生产 / 本地环境编排
@@ -34,8 +38,18 @@ Blog/
 │   ├── optimization.md       # 性能与安全优化
 │   ├── development.md        # 开发规范与约定
 │   └── workflow.md           # 团队协作工作流
+├── nuxt-blog/               # Nuxt 3 SSR 项目（首页 SSR 优化）
+│   ├── pages/               # 页面（文件系统路由）
+│   │   └── index.vue        # 首页（SSR）
+│   ├── composables/         # 组合式函数（自动导入）
+│   ├── stores/              # Pinia 状态管理
+│   ├── components/          # Vue 组件（自动导入）
+│   ├── layouts/             # 布局组件
+│   ├── plugins/             # 插件（自动加载）
+│   ├── server/              # 服务端代码
+│   └── nuxt.config.ts       # Nuxt 配置
 ├── packages/                 # 子包目录（monorepo workspace）
-│   ├── frontend/             # 前端项目（Vue3 + Vite）
+│   ├── frontend/             # 前端项目（Vue3 + Vite，SPA 模式）
 │   │   ├── public/
 │   │   ├── src/
 │   │   │   ├── api/          # 前端接口封装
@@ -86,7 +100,13 @@ Blog/
 4. 启动 MySQL 和 Redis：`cd docker && docker-compose up -d mysql redis`
 5. 初始化数据库：`cd packages/backend && pnpm run init-db`
 6. 启动后端：`pnpm run dev:backend`（端口：3001）
-7. 启动前端：`pnpm run dev:frontend`（端口：5173）
+7. 启动前端（SPA）：`pnpm run dev:frontend`（端口：5173）
+8. 启动 Nuxt SSR（可选）：`cd nuxt-blog && pnpm dev`（端口：3000）
+
+**注意**：
+- 前端主应用（Vue3 SPA）和 Nuxt SSR 首页可以独立运行
+- 生产环境通过 Nginx 路由转发：首页走 Nuxt SSR，其他页面走 Vue3 SPA
+- 详细说明请参考 `nuxt-blog/README.md`
 
 ### Docker 容器部署
 1. 配置环境变量：复制 `docker/.env.example` 为 `.env` 并修改配置
@@ -105,8 +125,20 @@ Blog/
 
 ## 相关文档
 - **项目启动指南**：参见 `docs/start.md` ⭐
+- **Nuxt SSR 首页说明**：参见 `nuxt-blog/README.md` ⭐
 - 详细架构设计：参见 `docs/architecture.md`
 - 部署手册：参见 `docs/deployment.md`
 - 开发手册: 参见 `docs/development.md`
 - 性能与安全优化文档：参见 `docs/optimization.md`
 - 开发工作流：参见 `docs/workflow.md`
+
+## 架构说明
+
+### 前端架构
+- **Vue3 SPA 应用**（`packages/frontend`）：主应用，包含文章详情、分类、搜索、管理后台等页面
+- **Nuxt 3 SSR 应用**（`nuxt-blog`）：独立项目，仅实现首页 SSR，提升首屏性能和 SEO
+
+### 部署架构
+- 首页（`/`）：由 Nuxt 3 SSR 服务渲染，支持服务端渲染或静态导出
+- 其他页面（`/article/**`、`/category/**`、`/admin/**` 等）：由 Vue3 SPA 应用处理
+- 通过 Nginx 路由转发实现无缝切换
