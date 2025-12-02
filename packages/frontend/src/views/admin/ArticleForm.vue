@@ -111,7 +111,6 @@ import { articleApi } from '@/api';
 // import { ElMessage } from 'element-plus'; 这些 import 可以移除（插件会自动处理）
 import MarkdownEditor from '@/components/MarkdownEditor.vue'
 
-
 const route = useRoute();
 const router = useRouter();
 const formRef = ref(null);
@@ -129,7 +128,7 @@ const form = reactive({
 // 内容分析结果
 const contentAnalysis = ref(null);
 const contentValidation = ref(null);
-console.log('contentAnalysis', contentAnalysis.value);
+
 const rules = {
   title: [{ required: true, message: '请输入文章标题', trigger: 'blur' }],
   content: [{ required: true, message: '请输入文章内容', trigger: 'blur' }]
@@ -147,7 +146,7 @@ async function loadArticle() {
       category_id: article.category_id,
       status: article.status
     });
-    console.log('form', form);
+    // console.log('form', form);
   } catch (error) {
     ElMessage.error('加载文章失败');
     router.push('/admin/articles');

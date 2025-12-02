@@ -1,0 +1,140 @@
+# useTabVisibility 功能扩展方案
+
+## 背景分析
+
+基于项目实际情况，发现以下使用场景：
+
+1. **Dashboard 页面**：需要定时刷新统计数据（访问趋势、热门文章等）
+2. **ArticleList 页面**：可能需要定时刷新文章列表
+3. **MarkdownEditor 组件**：有定时分析功能（防抖 500ms）
+4. **图表组件**：BaseEChart 有动画效果，非活跃时可暂停
+
+## 功能扩展需求
+9
+### 1. 自动轮询管理（useAutoPolling）
+
+**场景**：Dashboard 需要每 30 秒刷新一次统计数据，但页签不活跃时应暂停
+
+**功能**：
+
+- 提供 `useAutoPolling` 工具函数，自动管理轮询
+- 页签活跃时自动开始轮询，非活跃时自动暂停
+- 支持自定义轮询间隔、立即执行选项
+
+**API 设计**：
+
+```javascript
+const { start, stop, isRunning } = useAutoPolling(async () => {
+  await loadDashboardData()
+}, { interval: 30000, immediate: false })
+```
+
+### 2. 浏览时长统计（useBrowsingTime）
+
+**场景**：统计用户实际浏览时长，用于数据分析（排除非活跃时间）
+
+**功能**：
+
+- 自动记录页签活跃时长
+- 提供累计浏览时长、本次浏览时长
+- 支持暂停/恢复统计
+- 可导出统计数据
+
+**API 设计**：
+
+```javascript
+const { 
+  totalTime,      // 累计浏览时长（秒）
+  sessionTime,    // 本次浏览时长（秒）
+  startTracking,  // 开始统计
+  stopTracking,   // 停止统计
+  resetSession    // 重置本次统计
+} = useBrowsingTime()
+```
+
+### 3. 状态变化回调（onVisibilityChange）
+
+**场景**：组件需要在页签状态变化时执行特定操作
+
+**功能**：
+
+- 提供 `onVisibilityChange` 回调函数
+- 支持传入 `onActive` 和 `onInactive` 回调
+- 自动清理回调，避免内存泄漏
+
+**API 设计**：
+
+```javascript
+useTabVisibility({
+  onActive: () => {
+    console.log('页签变为活跃')
+    // 恢复动画、恢复轮询等
+  },
+  onInactive: () => {
+    console.log('页签变为非活跃')
+    // 暂停动画、暂停轮询等
+  }
+})
+```
+
+### 4. 配置选项（options）
+
+**功能**：
+
+- 允许自定义过期时间、清理间隔
+- 支持禁用多页签通信（仅单页签模式）
+- 支持自定义 localStorage key
+
+**API 设计**：
+
+```javascript
+const { isActive } = useTabVisibility({
+  expiryTime: 5000,        // 过期时间（毫秒）
+  cleanupInterval: 10000,  // 清理间隔（毫秒）
+  enableMultiTab: true,    // 是否启用多页签通信
+  storageKey: '__custom_key__' // 自定义存储 key
+})
+```
+
+### 5. 工具方法扩展
+
+**功能**：
+
+- `pauseWhenInactive(fn)` - 当页签非活跃时暂停执行函数
+- `resumeWhenActive(fn)` - 当页签活跃时恢复执行函数
+- `getActiveTabCount()` - 获取当前活跃页签数量（基于 localStorage）
+
+## 实现优先级
+
+### 高优先级（核心功能）
+
+1. ✅ **状态变化回调** - 最常用，方便组件响应状态变化
+2. ✅ **配置选项** - 提高灵活性，满足不同场景需求
+
+### 中优先级（实用功能）
+
+3. ✅ **自动轮询管理** - Dashboard 等页面需要定时刷新
+4. ✅ **浏览时长统计** - 用于数据分析
+
+### 低优先级（增强功能）
+
+5. ⚠️ **工具方法扩展** - 可选，根据实际需求决定
+
+## 文件变更
+
+1. **修改文件**：`packages/frontend/src/composables/useTabVisibility.js`
+   - 添加配置选项支持
+   - 添加状态变化回调
+   - 添加自动轮询管理工具
+   - 添加浏览时长统计工具
+
+2. **使用示例**：
+   - 在 `Dashboard.vue` 中使用自动轮询
+   - 在需要统计浏览时长的页面使用 `useBrowsingTime`
+
+## 技术要点
+
+- 保持向后兼容（现有代码无需修改）
+- 使用 Vue 3 Composition API
+- 自动清理资源，避免内存泄漏
+- 提供 TypeScript 类型定义（可选）

@@ -30,8 +30,6 @@ export const useRequest = () => {
   const config = useRuntimeConfig(); // 服务端可以直接访问所有环境变量（通过 useRuntimeConfig()）
   const baseURL = config.public.apiBase || '/api';
 
-  console.log('config = ', config);
-
   /**
    * 创建请求函数，自动处理认证和错误
    */

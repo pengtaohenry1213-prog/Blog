@@ -23,6 +23,7 @@
 import { onMounted, onBeforeUnmount, ref, watch, nextTick } from 'vue'
 import * as echarts from 'echarts'
 import { Loading } from '@element-plus/icons-vue'
+import { useTabVisibility } from '@/composables/useTabVisibility'
 
 const props = defineProps({
   options: {
@@ -87,6 +88,25 @@ onMounted(async () => {
   }
 
   window.addEventListener('resize', resizeChart)
+})
+
+/**
+ * 页签非活跃时暂停图表动画，重新激活时恢复动画
+ * 使用 useTabVisibility 的状态变化回调实现
+ */
+useTabVisibility({
+  onInactive: () => {
+    if (chartInstance) {
+      chartInstance.setOption({ animation: false }, false)
+    }
+  },
+  onActive: () => {
+    if (chartInstance) {
+      chartInstance.setOption({ animation: true }, false)
+      // 恢复后根据容器尺寸自动适配
+      resizeChart()
+    }
+  }
 })
 
 watch(

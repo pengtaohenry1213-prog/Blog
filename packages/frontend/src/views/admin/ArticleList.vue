@@ -47,10 +47,11 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, onBeforeUnmount } from 'vue';
 import { useRouter } from 'vue-router';
 import { articleApi } from '@/api';
-// import { ElMessage, ElMessageBox } from 'element-plus'; // 这些 import 可以移除（插件会自动处理）
+import { useAutoPolling } from '@/composables/useTabVisibility';
+import { ElMessage, ElMessageBox } from 'element-plus';
 
 const router = useRouter();
 const articleList = ref([]);
@@ -61,10 +62,11 @@ const pagination = ref({
   total: 0
 });
 
+// 
 async function loadArticles() {
   loading.value = true;
   try {
-    console.log('loadArticles');  
+    console.log('loadArticles 加载文章列表');  
     const result = await articleApi.getList({
       page: pagination.value.page,
       pageSize: pagination.value.pageSize,
@@ -78,6 +80,25 @@ async function loadArticles() {
     loading.value = false;
   }
 }
+
+/**
+ * 文章列表自动轮询配置：
+ * - 仅在当前标签页处于活跃状态时才执行轮询
+ * - 默认每 30 秒刷新一次列表数据
+ */
+const articleListPollingOptions = {
+  interval: 30 * 1000, // 轮询间隔：30 秒
+  immediate: false,    // 不在启动时立刻执行，由 onMounted 首次加载
+  autoStart: true,     // 根据标签页可见性自动启动 / 暂停
+  visibilityOptions: {
+    // 使用默认的可见性配置即可，如有需要可以在此单独调整
+  }
+};
+
+const { start: startArticleListPolling, stop: stopArticleListPolling } = useAutoPolling(
+  () => loadArticles(),
+  articleListPollingOptions
+);
 
 function handleCreate() {
   router.push('/admin/articles/create');
@@ -138,7 +159,15 @@ function handlePageChange(val) {
 }
 
 onMounted(() => {
+  // 首次进入页面加载一次数据
   loadArticles();
+  // 然后开启自动轮询（仅在当前标签页活跃时触发）
+  startArticleListPolling();
+});
+
+onBeforeUnmount(() => {
+  // 组件销毁前停止轮询，避免内存泄漏
+  stopArticleListPolling(true);
 });
 </script>
 

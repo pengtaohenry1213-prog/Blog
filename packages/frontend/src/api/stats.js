@@ -36,11 +36,31 @@ export function getArticleDetailStats(articleId, params = {}) {
   })
 }
 
+// 浏览时长上报：用于 Dashboard 等页面记录实际浏览行为
+export function reportBrowsingTime(data) {
+  return request({
+    url: '/stats/browsing-time',
+    method: 'post',
+    data
+  })
+}
+
+// 浏览时长汇总：用于 Dashboard 调试面板展示历史统计
+export function getBrowsingTimeSummary(params = {}) {
+  return request({
+    url: '/stats/browsing-time/summary',
+    method: 'get',
+    params
+  })
+}
+
 export const statsApi = {
   getOverview,
   // getTopArticles,
   getArticleStats,
-  getArticleDetailStats
+  getArticleDetailStats,
+  reportBrowsingTime,
+  getBrowsingTimeSummary
 }
 
 

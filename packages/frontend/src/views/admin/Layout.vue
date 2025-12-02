@@ -51,11 +51,20 @@
 import { computed } from 'vue';
 import { useRoute } from 'vue-router';
 import { useAuthStore } from '@/stores/auth';
+import { useTabVisibility } from '@/composables/useTabVisibility';
 import { DataBoard, Document, User, Loading } from '@element-plus/icons-vue';
 
 const route = useRoute();
 const authStore = useAuthStore();
 const activeMenu = computed(() => route.path);
+
+// 使用页签活跃状态管理
+// 这些变量可以在需要时使用，例如：
+// - isActive: 当前页签是否可见（可用于音视频控制、轮询等）
+// - isCurrentTabActive: 当前页签是否是所有页签中最活跃的
+// - tabId: 当前页签的唯一 ID
+// eslint-disable-next-line no-unused-vars
+const { isActive, isCurrentTabActive, tabId } = useTabVisibility();
 
 function handleLogout() {
   authStore.logout();

@@ -91,6 +91,9 @@ import logger from './utils/logger.js'; // 导入日志记录器
 import { requestLogger } from './middleware/requestLogger.js'; // 导入请求日志记录器
 import { errorHandler, notFoundHandler } from './middleware/errorHandler.js'; // 错误处理中间件
 
+// 处理MySQL连接失败时, 给出友好的错误提示信息
+import { printConnectionError, checkDependencies } from './utils/connectionHelper.js';
+
 import { apiLimiter } from './middleware/rateLimiter.js'; // 导入限流器中间件
 
 // 导入路由
@@ -222,6 +225,21 @@ app.use(errorHandler);      // 全局错误处理
 
 // 服务器启动 ✅
 async function startServer() {
+  // 开发环境可以启用依赖检查
+  if (config.env === 'development') {
+    const depsOk = await checkDependencies(sequelize, redisClient);
+    if (!depsOk) {
+      // 检查是否有 MySQL 错误（必须）
+      try {
+        await sequelize.authenticate();
+      } catch (error) {
+        // printConnectionError(error, 'MySQL');
+        console.log('\n❌ MySQL 是必需服务，请先启动 MySQL\n');
+        process.exit(1);
+      }
+    }
+  }
+
   try {
     // ✅ 验证 MySQL 连接可用
     await sequelize.authenticate();
@@ -238,11 +256,21 @@ async function startServer() {
     // ✅ 监听指定端口（默认 3001）
     // ✅ 输出启动成功日志
     app.listen(PORT, () => {
+      console.log('\n' + '='.repeat(60));
+      console.log('🚀 服务器启动成功！');
+      console.log('='.repeat(60));
+      console.log(`📍 服务地址: http://localhost:${PORT}`);
+      console.log(`📚 API 文档: http://localhost:${PORT}/api-docs`);
+      console.log(`🏥 健康检查: http://localhost:${PORT}/api/health`);
+      console.log('='.repeat(60) + '\n');
+      
       logger.info(`服务器运行在 http://localhost:${PORT}`);
       logger.info(`API 文档: http://localhost:${PORT}/api-docs`);
     });
   } catch (error) {
-    logger.error('服务器启动失败:', error);
+    // 使用友好的错误提示
+    // printConnectionError(error, 'MySQL');
+    console.log('\n⚠️  服务器启动失败，请解决上述问题后重试\n');
     process.exit(1);
   }
 }
@@ -253,18 +281,53 @@ async function startServer() {
     优雅关闭数据库和缓存连接
     释放资源，防止数据损坏
 */
-process.on('SIGTERM', async () => {
-  logger.info('SIGTERM 信号 received，正在关闭服务器...');
-  await sequelize.close();
-  await redisClient.quit();
+async function gracefulShutdown() {
+  logger.info('正在关闭服务器...');
+  
+  // 关闭逻辑 try-catch 捕获异常
+  // 关闭前检查状态：
+  //  - 数据库：检查 sequelize.connectionManager 是否存在
+  //  - Redis：使用 redisClient.isOpen 检查是否已打开
+  try {
+    // 关闭数据库连接
+    if (sequelize && sequelize.connectionManager) {
+      await sequelize.close();
+      logger.info('数据库连接已关闭');
+    }
+  } catch (error) {
+    logger.warn('关闭数据库连接时出错:', error.message);
+  }
+  
+  // 关闭逻辑 try-catch 捕获异常
+  try {
+    // 检查 Redis 客户端状态，避免重复关闭, 重复执行: quit() 会抛出 ClientClosedError终端无效的提示信息
+    if (redisClient && redisClient.isOpen) {
+      await redisClient.quit();
+      logger.info('Redis 连接已关闭');
+    } else {
+      logger.info('Redis 客户端已关闭或未连接');
+    }
+  } catch (error) {
+    // 如果客户端已经关闭，忽略错误
+    if (error.message && error.message.includes('closed')) {
+      logger.info('Redis 客户端已关闭');
+    } else {
+      logger.warn('关闭 Redis 连接时出错:', error.message);
+    }
+  }
+  
   process.exit(0);
+}
+
+// 提取 gracefulShutdown() 函数，统一处理关闭逻辑
+process.on('SIGTERM', async () => {
+  logger.info('SIGTERM 信号 received');
+  await gracefulShutdown();
 });
 
 process.on('SIGINT', async () => {
-  logger.info('SIGINT 信号 received，正在关闭服务器...');
-  await sequelize.close();
-  await redisClient.quit();
-  process.exit(0);
+  logger.info('SIGINT 信号 received');
+  await gracefulShutdown();
 });
 
 // 执行启动服务器

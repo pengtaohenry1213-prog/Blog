@@ -1,5 +1,6 @@
 import Article from '../../models/Article.js';
 import User from '../../models/User.js';
+import BrowsingStat from '../../models/BrowsingStat.js';
 import { Op, fn, col } from 'sequelize';
 // import sequelize from '../../config/database.js';
 import debug from 'debug';
@@ -205,6 +206,76 @@ class StatsService {
     });
 
     return heatmapData;
+  }
+
+  /**
+   * 记录浏览时长
+   * @param {Object} payload 前端上报的数据
+   * @param {Object} user 当前登录用户（可选）
+   */
+  async recordBrowsingTime(payload, user) {
+    const {
+      page,
+      totalTime,
+      sessionTime,
+      isTracking,
+      reason,
+      reportedAt
+    } = payload || {};
+
+    if (!page) {
+      throw new Error('page is required for browsing time reporting');
+    }
+
+    const userId = user?.id || null;
+
+    await BrowsingStat.create({
+      page,
+      user_id: userId,
+      total_time: Number(totalTime) || 0,
+      session_time: Number(sessionTime) || 0,
+      is_tracking: !!isTracking,
+      reason: reason || null,
+      reported_at: reportedAt ? new Date(reportedAt) : new Date(),
+      user_agent: payload.userAgent || null,
+      ip: payload.ip || null
+    });
+  }
+
+  /**
+   * 获取浏览时长汇总信息
+   * 可按 page 和 user 维度做聚合
+   */
+  async getBrowsingSummary({ page, user }) {
+    const where = {};
+    if (page) {
+      where.page = page;
+    }
+    if (user?.id) {
+      where.user_id = user.id;
+    }
+
+    const [agg, totalCount] = await Promise.all([
+      BrowsingStat.findOne({
+        attributes: [
+          [fn('SUM', col('session_time')), 'totalSessionTime'],
+          [fn('SUM', col('total_time')), 'totalReportedTime'],
+          [fn('MAX', col('reported_at')), 'lastReportedAt']
+        ],
+        where,
+        raw: true
+      }),
+      BrowsingStat.count({ where })
+    ]);
+
+    return {
+      page: page || null,
+      userId: user?.id || null,
+      totalSessionTime: Number(agg?.totalSessionTime || 0),
+      totalReportedTime: Number(agg?.totalReportedTime || 0),
+      lastReportedAt: agg?.lastReportedAt || null,
+      reportCount: totalCount
+    };
   }
 }
 

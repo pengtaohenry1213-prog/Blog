@@ -37,7 +37,7 @@
 ```plaintext
 backend/
 ├── app.js                    # 应用入口，路由挂载、中间件配置、Swagger、健康检查
-├── package.json              # 项目依赖配置
+├── package.json              # 项目依赖配置 ("dev": "NODE_OPTIONS='' node --watch app.js" 中使用 NODE_OPTIONS='' 避免了Cursor 自动附加debug模式)
 ├── pnpm-lock.yaml            # 依赖锁定文件
 ├── README.md                 # 项目说明
 │

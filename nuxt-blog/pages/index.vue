@@ -59,6 +59,12 @@ console.warn('[nuxt-blog/pages/index.vue 这里是SSR Nuxt首页] index.vue');
 import { ref, computed, watchEffect } from 'vue';
 import { useArticleApi } from '~/composables/useArticleApi';
 
+// 显式指定使用 default 布局
+// definePageMeta({
+//   layout: 'default'
+// })
+
+
 // Nuxt 3 内置了 useRouter，无需从 vue-router 导入（自动导入）
 const router = useRouter();
 const articleApi = useArticleApi();

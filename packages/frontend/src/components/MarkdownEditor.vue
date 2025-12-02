@@ -5,6 +5,7 @@
 import { ref, onMounted, onBeforeUnmount, watch, defineProps, defineEmits, nextTick } from 'vue'
 import Vditor from 'vditor'
 import 'vditor/dist/index.css'
+import { useTabVisibility } from '@/composables/useTabVisibility'
 
 const editorRef = ref(null)
 let vditor = ref(null)
@@ -21,6 +22,19 @@ let messageChannel = null
 let workerPort = null
 let analysisTimer = null // 防抖定时器
 let isWorkerInitialized = false // 标记 Worker 是否已初始化
+
+// 页签可见性：当标签页不活跃时暂停内容分析（防抖 500ms）
+const { isActive } = useTabVisibility({
+  // Markdown 编辑器一般只在单个后台管理标签使用，但保持多标签支持配置
+  enableMultiTab: true,
+  onInactive: () => {
+    // 标签页切到后台时，清除未触发的分析定时器，避免无意义的计算
+    if (analysisTimer) {
+      clearTimeout(analysisTimer)
+      analysisTimer = null
+    }
+  }
+})
 
 // 图表相关：用于插入 ECharts 配置代码块
 const defaultChartBlock = `\`\`\`echarts
@@ -180,6 +194,12 @@ function handleWorkerMessage(type, data) {
  */
 function analyzeContent(content) {
   console.warn('analyzeContent content = ', content.length);
+
+  // 若当前页签不可见，则不执行内容分析，等重新变为可见后再由输入/初始化触发
+  if (!isActive.value) {
+    return
+  }
+
   // 延迟初始化 Worker（按需加载）
   if (!isWorkerInitialized) {
     initMessageChannel()
@@ -371,7 +391,7 @@ onMounted(async () => {
       // 标记编辑器已完全初始化
       isEditorReady.value = true
       
-      console.log('after 1: isEditorReady = ', isEditorReady.value);
+      // console.log('after 1: isEditorReady = ', isEditorReady.value);
 
       // 初始化时同步只读状态
       handleReadonlyChange(props.readonly)
