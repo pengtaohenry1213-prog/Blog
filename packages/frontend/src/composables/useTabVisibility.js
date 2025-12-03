@@ -1,5 +1,6 @@
 /*
 useTabVisibility:
+  useTabVisibility 专门管：当前 tab 是否可见、多 tab 竞争谁是“最活跃”等。
   开始 → 初始化配置/生成tabId → 设初始状态
   挂载 → 注册事件监听
     ├─ visibilitychange → 更新状态 → 处理回调
@@ -24,72 +25,68 @@ useBrowsingTime:
 import { ref, onMounted, onUnmounted, watch } from 'vue';
 
 /**
- * useTabVisibility 详细流程：
-    开始
-    ├─ 初始化配置（合并默认值与用户参数）
-    │  ├─ 过期时间/清理间隔/多页签开关/storageKey
-    │  └─ 回调函数(onActive/onInactive)
-    ├─ 生成唯一tabId（时间戳+随机数）
-    ├─ 初始化状态
-    │  ├─ isActive（基于document.visibilityState）
-    │  └─ isCurrentTabActive（多页签关则=isActive，开则=true）
-    ├─ 组件挂载(onMounted)
-    │  ├─ 注册visibilitychange监听
-    │  │  └─ 监听页签可见性变化
-    │  ├─ 若启用多页签通信：
-    │  │  ├─ 注册storage事件监听（同步其他页签变化）
-    │  │  ├─ 更新当前状态到localStorage
-    │  │  ├─ 检查当前是否为最活跃页签(checkCurrentTabActive)
-    │  │  └─ 启动定时清理(cleanupExpiredTabs)
-    │  └─ 触发初始化回调（force=true）
-    ├─ 事件处理
-    │  ├─ visibilitychange事件
-    │  │  ├─ 计算nextState（可见性状态）
-    │  │  ├─ 状态无变化：
-    │  │  │  ├─ 多页签开：更新localStorage+检查活跃性
-    │  │  │  └─ 多页签关：同步isCurrentTabActive
-    │  │  ├─ 状态有变化：
-    │  │  │  ├─ 更新isActive为nextState
-    │  │  │  ├─ 多页签开：
-    │  │  │  │  ├─ 符合条件时写入localStorage（可见/当前记录是自己）
-    │  │  │  │  └─ 检查当前是否为最活跃
-    │  │  │  └─ 多页签关：同步isCurrentTabActive
-    │  │  └─ 触发onActive/onInactive回调
-    │  ├─ storage事件（其他页签修改localStorage）
-    │  │  ├─ 校验storageKey匹配
-    │  │  └─ 重新检查当前是否为最活跃页签
-    │  └─ 定时清理任务
-    │     ├─ 读取localStorage状态
-    │     ├─ 移除过期且非当前页签的状态
-    │     └─ 重新检查活跃性
-    └─ 组件卸载(onUnmounted)
-      ├─ 移除visibilitychange/storage监听
-      ├─ 清除定时清理器
-      └─ 多页签开：移除localStorage中当前页签状态
- * 页签活跃状态管理 Composable
- *
- * 功能：
- * - 监听 document.visibilitychange 事件，检测当前页签的活跃状态
- * - 可选启用 localStorage 多页签通信
- * - 监听 window.storage 事件，同步其他页签的状态变化
- * - 生成唯一页签 ID（使用时间戳 + 随机数）
- * - 支持状态变化回调（onActive / onInactive）
- *
+ * Hooks: useTabVisibility 专门管：当前 tab 是否可见、多 tab 竞争谁是“最活跃”等。
  * @param {Object} options
+ * @param {string} options.componentName 所在组件名称
  * @param {number} options.expiryTime 过期时间（毫秒），默认 5000
  * @param {number} options.cleanupInterval 清理间隔（毫秒），默认 10000
  * @param {boolean} options.enableMultiTab 是否启用多页签通信，默认 true
  * @param {string} options.storageKey localStorage key，默认 '__tab_visibility_state__'
  * @param {Function} options.onActive 页签变为活跃时的回调
  * @param {Function} options.onInactive 页签变为非活跃时的回调
+ * 
  * @returns {Object} { isActive, isCurrentTabActive, tabId }
  */
 export function useTabVisibility(options = {}) {
+  /*
+    功能：
+      - 监听 document.visibilitychange 事件，检测当前页签的活跃状态
+      - 可选启用 localStorage 多页签通信
+      - 监听 window.storage 事件，同步其他页签的状态变化
+      - 生成唯一页签 ID（使用时间戳 + 随机数）
+      - 支持状态变化回调（onActive / onInactive）
+
+    useTabVisibility 流程：
+      开始
+      ├─ 初始化配置（合并默认与用户参数：过期时间、清理间隔等）
+      ├─ 生成唯一tabId（时间戳+随机数）
+      ├─ 初始化状态：
+      │  ├─ isActive（基于document可见性）
+      │  └─ isCurrentTabActive（多页签关则同isActive，开则初始为true）
+      ├─ 组件挂载：
+      │  ├─ 注册visibilitychange监听（监测当前页签可见性）
+      │  ├─ 多页签启用时：
+      │  │  ├─ 注册storage监听（同步其他页签变化）
+      │  │  ├─ 更新状态到localStorage
+      │  │  ├─ 检查当前是否为最活跃页签
+      │  │  └─ 启动定时清理任务
+      │  └─ 触发初始化回调（强制执行）
+      ├─ 事件处理：
+      │  ├─ visibilitychange：
+      │  │  ├─ 状态不变：多页签更新存储并查活跃性/单页签同步状态
+      │  │  ├─ 状态变化：更新isActive，多页签按需写存储并查活跃性
+      │  │  └─ 触发onActive/onInactive回调
+      │  ├─ storage（其他页签修改存储）：校验key后重查最活跃页签
+      │  └─ 定时清理：移除过期非当前页签状态，并重查活跃性
+      └─ 组件卸载：
+        ├─ 移除visibilitychange和storage监听
+        ├─ 清除定时清理器
+        └─ 多页签启用时删除localStorage中自身状态
+  */
+
+  /*
+    “多页签竞争”指的是同一应用被多个浏览器标签页或窗口同时打开时，它们需要协商“谁算作当前真正活跃、能够触发轮询或统计”等行为。
+    useTabVisibility 通过 localStorage 通信 + 定期清理的机制，让所有打开的标签页知道最新的“活跃者”，
+    避免多个页面同时执行相同任务（比如重复轮询接口、重复统计浏览时长）。
+    当某个标签页变为可见，它会把自己的状态写入存储并争取成为“最活跃”页签；
+    其他页签接收到存储事件后 会让出“主导权”，从而实现多标签之间的竞争与协作。
+  */
+
   const {
     expiryTime = 5000,
-    cleanupInterval = 10000,
+    cleanupInterval = 10*1000, // 默认10s
     enableMultiTab = true,
-    storageKey = '__tab_visibility_state__',
+    storageKey = '__tab_visibility_state__', // 建议调用方使用自己的 storageKey, 如: ‘__tab_xxx_polling__’
     onActive,
     onInactive
   } = options;
@@ -103,7 +100,9 @@ export function useTabVisibility(options = {}) {
   const initialVisibility = hasDocument ? document.visibilityState === 'visible' : true;
   console.warn('document.visibilityState: ',document.visibilityState)
   const isActive = ref(initialVisibility);
-  // 当前页签 是否是 所有页签中活跃的（基于 localStorage 通信）
+
+  // 默认使用 isCurrdentTabActive，保证多开同一页面时只统计一个页签
+  // 全局只有“当前被判定为 isCurrentTabActive 的页签”会继续轮询，其它页签（即使也可见）会停掉轮询。
   const isCurrentTabActive = ref(enableMultiTab ? true : initialVisibility);
 
   // 清理定时器 & 事件监听器
@@ -122,6 +121,7 @@ export function useTabVisibility(options = {}) {
    * 更新当前页签状态到 localStorage
    */
   function updateLocalStorage() {
+    // 有 window 的情况下才会启动；单页签/SSR 都不会跑。
     if (!enableMultiTab || !hasWindow) return;
 
     try {
@@ -142,6 +142,7 @@ export function useTabVisibility(options = {}) {
    * 从 localStorage 读取所有页签状态
    */
   function getAllTabsState() {
+    // 有 window 的情况下才会启动；单页签/SSR 都不会跑。
     if (!enableMultiTab || !hasWindow) return {};
 
     try {
@@ -166,13 +167,57 @@ export function useTabVisibility(options = {}) {
   }
 
   /**
-   * 判断当前页签是否是最活跃的
+   * 判断当前页签 是否是 最活跃的
+   * 基于 localStorage 的最新状态重新判断“当前页签是不是最活跃”。这是最关键的逻辑，
+   * 因为这是多 tab 通信的核心，决定了“谁说了算”。
    */
   function checkCurrentTabActive() {
+    /*
+      ┌─────────────────────────────────────────────────────────┐
+      │ 开始: checkCurrentTabActive()                            │
+      └───────────────────────────┬─────────────────────────────┘
+                                  ▼
+      ┌─────────────────────────────────────────────────────────┐
+      │ 条件1: 未启用多页签通信 或 无window环境?                │
+      ├─────────────┬───────────────────────────────────────────┤
+      │     是      │ 设isCurrentTabActive = isActive，打印日志 │
+      │             │ ──────────────▶ 结束                      │
+      │     否      │ 继续下一步                                │
+      └─────────────┴───────────────────┬───────────────────────┘
+                                        ▼
+      ┌─────────────────────────────────────────────────────────┐
+      │ 读取localStorage中所有页签状态(allTabsState)             │
+      └───────────────────────────┬─────────────────────────────┘
+                                  ▼
+      ┌─────────────────────────────────────────────────────────┐
+      │ 条件2: 无存储的tabId 或 存储tabId等于当前页签tabId?       │
+      ├─────────────┬───────────────────────────────────────────┤
+      │     是      │ 设isCurrentTabActive = isActive，打印日志 │
+      │             │ ──────────────▶ 结束                      │
+      │     否      │ 继续下一步                                │
+      └─────────────┴───────────────────┬───────────────────────┘
+                                        ▼
+      ┌─────────────────────────────────────────────────────────┐
+      │ 条件3: 存储的页签是活跃状态 且 存储tabId≠当前tabId?     │
+      ├─────────────┬───────────────────────────────────────────┤
+      │     是      │ 设isCurrentTabActive = false，打印日志    │
+      │     否      │ 设isCurrentTabActive = isActive，打印日志 │
+      └─────────────┴───────────────────┬───────────────────────┘
+                                        ▼
+      ┌─────────────────────────────────────────────────────────┐
+      │ 补充日志: 若当前页签不活跃/非最活跃，打印错误日志        │
+      └─────────────────────────────────────────────────────────┘
+                                  ▼
+                              流程结束
+
+    */
+
     // 如果未启用多页签通信，或者没有 window，则当前页签是活跃的
+    // 有 window 的情况下才会启动；单页签/SSR 都不会跑。
     if (!enableMultiTab || !hasWindow) {
+      // !hasWindow: 单页签/SSR 都不会跑, 所以 isCurrentTabActive 直接用 isActive 即可。
       isCurrentTabActive.value = isActive.value;
-      console.error('[function checkCurrentTabActive] single-tab', {
+      console.log('[判断当前页签是否是最活跃的] single-tab', {
         isActive: isActive.value,
         isCurrentTabActive: isCurrentTabActive.value,
       });
@@ -181,11 +226,10 @@ export function useTabVisibility(options = {}) {
 
     // 读取所有页签状态
     const allTabsState = getAllTabsState();
-    
-    // 如果没有其他页签的状态，或者当前页签就是存储的页签，则当前页签是活跃的
+    // 如果没有其他页签的状态(没有tabId)，或者当前页签就是存储的页签(tabId==tabId)，则当前页签是活跃的
     if (!allTabsState.tabId || allTabsState.tabId === tabId.value) {
       isCurrentTabActive.value = isActive.value;
-      console.warn('[checkCurrentTabActive] self-or-empty', {
+      console.warn('如果没有其他页签的状态(没有tabId)，或者当前页签就是存储的页签(tabId==tabId)，则当前页签是活跃的: ', {
         isActive: isActive.value,
         isCurrentTabActive: isCurrentTabActive.value,
         storage: allTabsState,
@@ -196,7 +240,7 @@ export function useTabVisibility(options = {}) {
     // 如果其他页签是活跃的，且时间戳较新，则当前页签不是最活跃的
     if (allTabsState.isActive && allTabsState.tabId !== tabId.value) {
       isCurrentTabActive.value = false;
-      console.warn('[checkCurrentTabActive] other-active', {
+      console.warn('如果其他页签是活跃的，且时间戳较新，则当前页签不是最活跃的: ', {
         isActive: isActive.value,
         isCurrentTabActive: isCurrentTabActive.value,
         storage: allTabsState,
@@ -205,7 +249,7 @@ export function useTabVisibility(options = {}) {
     } else {
       // 其他页签不活跃，或者当前页签就是存储的页签，则当前页签是活跃的
       isCurrentTabActive.value = isActive.value;
-      console.warn('[checkCurrentTabActive] other-inactive', {
+      console.warn('其他页签不活跃，或者当前页签就是存储的页签，则当前页签是活跃的: ', {
         isActive: isActive.value,
         isCurrentTabActive: isCurrentTabActive.value,
         storage: allTabsState,
@@ -213,15 +257,15 @@ export function useTabVisibility(options = {}) {
     }
 
     if(!isActive.value) {
-      console.error('[function checkCurrentTabActive] isActive.value = false 当前页签不活跃!');
+      console.error('当前页签不活跃!');
     }
     if(!isCurrentTabActive.value) {
-      console.error('[function checkCurrentTabActive] isCurrentTabActive.value = false 当前页签不是所有页签中活跃的!');
+      console.error('当前页签不是所有页签中活跃的!');
     }
   }
 
   /**
-   * 清理过期的页签状态
+   * 清理过期的页签状态, 把 localStorage 里已经过期、且不是当前 tab 的记录清掉
    */
   function cleanupExpiredTabs() {
     if (!enableMultiTab || !hasWindow) return;
@@ -266,7 +310,6 @@ export function useTabVisibility(options = {}) {
    * 处理 visibilitychange 事件
    */
   function handleVisibilityChange() {
-    console.warn('[handleVisibilityChange] 处理 visibilitychange 事件: document.visibilityState =', document.visibilityState);
     const nextState = hasDocument ? document.visibilityState === 'visible' : true;
     const previousState = isActive.value;
 
@@ -277,7 +320,6 @@ export function useTabVisibility(options = {}) {
         // 更新 localStorage
         updateLocalStorage();
 
-        console.error('[handleVisibilityChange] if (previousState === nextState) { updateLocalStorage()');
         // 检查当前页签是否是最活跃的
         checkCurrentTabActive();
       } else {
@@ -309,8 +351,6 @@ export function useTabVisibility(options = {}) {
       
       // 4. 再根据最新的 storage 状态更新 isCurrentTabActive
       checkCurrentTabActive();
-
-      console.error('[handleVisibilityChange] if (enableMultiTab) { updateLocalStorage()');
     } else {
       // 未启用多页签通信时，本 tab 的可见状态就是唯一依据
       isCurrentTabActive.value = nextState;
@@ -329,7 +369,6 @@ export function useTabVisibility(options = {}) {
     // 如果事件的 key 不是 storageKey，则不处理
     if (event.key !== storageKey) return;
 
-    console.error('[handleStorageChange] 处理 storage 事件（其他页签的 localStorage 变化） checkCurrentTabActive(),  event.key =', event.key);
     // 如果其他页签更新了状态，重新检查当前页签是否是最活跃的
     checkCurrentTabActive();
   }
@@ -339,6 +378,10 @@ export function useTabVisibility(options = {}) {
    */
   function init() {
     if (!hasWindow || !hasDocument) return;
+
+    // 组合式里
+    const { componentName = 'unknown' } = options;
+    console.error(`组件 ${componentName} 挂载时初始化 -> init()`);
 
     // 保存事件处理函数的引用，以便后续清理
     visibilityHandler = handleVisibilityChange;
@@ -355,7 +398,7 @@ export function useTabVisibility(options = {}) {
 
     // 监听当前页签的 visibilitychange 事件
     if (enableMultiTab) {
-      console.error('[init] if (enableMultiTab) { updateLocalStorage()');
+      // console.error('[init] if (enableMultiTab) { updateLocalStorage()');
       // 更新当前页签状态到 localStorage
       updateLocalStorage();
       // 检查当前页签是否是最活跃的
@@ -367,7 +410,7 @@ export function useTabVisibility(options = {}) {
         cleanupExpiredTabs();
         // 检查当前页签是否是最活跃的
         checkCurrentTabActive();
-        console.error('[init] 定期清理过期的页签状态 -> checkCurrentTabActive()');
+        // console.error('[init] cleanupTimer = setInterval(() => { -> checkCurrentTabActive()');
       }, cleanupInterval);
     } else {
       // 如果没有启用多页签通信，则当前页签的状态就是活跃的
@@ -447,46 +490,54 @@ export function useTabVisibility(options = {}) {
 }
 
 /**
- * useAutoPolling 详细流程：
-    开始
-    ├─ 校验参数（poller必须为函数）
-    ├─ 初始化配置
-    │  ├─ 轮询间隔(默认30000ms)/立即执行/自动启动
-    │  └─ 页签配置(传递给useTabVisibility)
-    ├─ 初始化状态
-    │  ├─ isRunning（轮询中）/isExecuting（任务执行中）
-    │  └─ shouldResume（是否需恢复轮询，默认=autoStart）
-    ├─ 依赖useTabVisibility获取isActive（页签活跃状态）
-    ├─ 监听isActive变化
-    │  ├─ 变为false（页签不活跃）→ 调用stop()
-    │  │  ├─ 清除定时器
-    │  │  └─ 标记isRunning=false
-    │  └─ 变为true（页签活跃）
-    │     └─ 若shouldResume且未轮询 → 调用start()
-    ├─ start()逻辑
-    │  ├─ 校验：浏览器环境/未运行/间隔合法/页签活跃
-    │  ├─ 若immediate=true → 立即执行poller
-    │  ├─ 启动定时器（按间隔执行poller）
-    │  └─ 标记 isRunning=true
-    ├─ stop()逻辑
-    │  ├─ 清除定时器
-    │  ├─ 若 forceDisable=true → 标记 shouldResume=false
-    │  └─ 标记 isRunning=false
-    ├─ execute()逻辑（执行轮询任务）
-    │  ├─ 若任务执行中 → 直接返回
-    │  ├─ 标记isExecuting=true
-    │  ├─ 执行poller（支持Promise）
-    │  └─ 任务结束 → 标记isExecuting=false
-    └─ 组件卸载 → 调用stop(true)（强制停止+禁用自动恢复）
- * 自动轮询工具，结合页签活跃状态自动暂停/恢复 [根据options -> 自动轮询 poller函数 执行]
+ * Hooks: useAutoPolling 根据某个布尔状态（这里就是 isActive）来 启停轮询。
+ * 功能: 自动轮询工具，结合页签活跃状态自动暂停/恢复 [根据options -> 自动轮询 poller函数 执行]
  * @param {Function} poller 轮询任务函数（可返回 Promise）
  * @param {Object} options
  * @param {number} options.interval 轮询间隔（默认 30000 毫秒）
  * @param {boolean} options.immediate 是否在开始时立即执行一次任务
  * @param {boolean} options.autoStart 是否根据页签状态自动启动
  * @param {Object} options.visibilityOptions 传递给 useTabVisibility 的配置
+ * 
+ * 如果以后你想在某个页面“只看自己 tab 是否可见，不参与竞争”，可以在该页面传：
+ *  visibilityOptions: {
+ *    useCurrentTabActive: false
+ *  }
  */
 export function useAutoPolling(poller, options = {}) {
+  /*
+    useAutoPolling 详细流程：
+      开始
+      ├─ 初始化-配置
+      │  ├─ 轮询间隔(默认30000ms)/立即执行/自动启动
+      │  └─ 页签配置(传递给useTabVisibility)
+      ├─ 初始化-状态
+      │  ├─ isRunning（轮询中）/isExecuting（任务执行中）
+      │  └─ shouldResume（是否需恢复轮询，默认=autoStart）
+      ├─ 依赖useTabVisibility获取isActive（页签活跃状态）
+      ├─ 监听isActive变化
+      │  ├─ 变为false（页签不活跃）→ 调用stop()
+      │  │  ├─ 清除定时器
+      │  │  └─ 标记isRunning=false
+      │  └─ 变为true（页签活跃）
+      │     └─ 若shouldResume且未轮询 → 调用start()
+      ├─ start()逻辑
+      │  ├─ 校验：浏览器环境/未运行/间隔合法/页签活跃
+      │  ├─ 若immediate=true → 立即执行poller
+      │  ├─ 启动定时器（按间隔执行poller）
+      │  └─ 标记 isRunning=true
+      ├─ stop()逻辑
+      │  ├─ 清除定时器
+      │  ├─ 若 forceDisable=true → 标记 shouldResume=false
+      │  └─ 标记 isRunning=false
+      ├─ execute()逻辑（执行轮询任务）
+      │  ├─ 若任务执行中 → 直接返回
+      │  ├─ 标记isExecuting=true
+      │  ├─ 执行poller（支持Promise）
+      │  └─ 任务结束 → 标记isExecuting=false
+      └─ 组件卸载 → 调用stop(true)（强制停止+禁用自动恢复）
+  */
+
   if (typeof poller !== 'function') {
     throw new Error('useAutoPolling requires a polling function with poller param.');
   }
@@ -504,9 +555,22 @@ export function useAutoPolling(poller, options = {}) {
   let timerId = null;
   let shouldResume = autoStart; // 是否自动启动，默认自动启动
 
-  console.warn(`useAutoPolling -> useTabVisibility(${JSON.stringify(visibilityOptions)})`);
-  
-  const { isActive } = useTabVisibility(visibilityOptions);
+  // useAutoPolling 之所以内部调用 useTabVisibility，是为了拿到这个组件对应的 “页签是否活跃” 状态，
+  // 从而在标签页不可见时自动暂停轮询，在标签页恢复时再自动恢复。
+  // 这是一种标准的 composable 组合用法，它们之间是“依赖关系 + 联动”的。
+  // 两个 composable 共用的是同一套生命周期（这个组件的 onMounted/onUnmounted），但各自维护自己的 ref、定时器、监听：
+  //  - useTabVisibility 返回 isActive / isCurrentTabActive / tabId。
+  //  - useAutoPolling 默认使用 isCurrentTabActive（多标签只保留一个“主轮询者”），
+  //    若业务希望“每个可见页签各自轮询”，可在 visibilityOptions 里传入 useCurrentTabActive: false。
+  const {
+    useCurrentTabActive = true,
+    ...tabVisibilityOptions
+  } = visibilityOptions || {};
+
+  // 把 useAutoPolling 改成默认用 isCurrentTabActive 控制轮询，这样多页签/多窗口里同一时刻只会有一个“主轮询者”。
+  // 同一时间只让一个最活跃页签负责轮询，避免多页签重复轮询。
+  const { isActive, isCurrentTabActive } = useTabVisibility(tabVisibilityOptions);
+  const activeRef = useCurrentTabActive ? isCurrentTabActive : isActive;
 
   /**
    * 执行轮询任务
@@ -530,7 +594,9 @@ export function useAutoPolling(poller, options = {}) {
   function start() {
     shouldResume = true;
     if (!canUseWindow || isRunning.value || interval <= 0) return;
-    if (!isActive.value) return;
+
+    // 启动/监听都基于 activeRef
+    if (!activeRef.value) return;
 
     if (immediate) {
       execute();
@@ -558,27 +624,26 @@ export function useAutoPolling(poller, options = {}) {
   }
 
   /**
-   * 监听页签状态变化
+   * 监听页签状态变化, 启动/监听都基于 activeRef
    */
   watch(
-    isActive,
+    activeRef,
     (active) => {
       // 非浏览器环境 
       if (!canUseWindow) return;
       if (!active) {
         console.error('[watch 监听页签状态变化] isActive -> ', active, ' -> stop()');
-        stop();
+        stop(); // 页签不活跃 -> 停止 setInterval
         return;
       }
       if (shouldResume && !isRunning.value) {
-        start();
+        start(); // 恢复活跃 -> 重新启动轮询
       }
     },
     { immediate: autoStart }
   );
 
   onUnmounted(() => {
-    console.error('[onUnmounted] stop(true)');
     stop(true);
   });
 
@@ -639,7 +704,8 @@ export function useBrowsingTime(options = {}) {
   // 同时拿到 isActive（当前页签可见）与 isCurrentTabActive（多页签中最活跃）
   const { isActive, isCurrentTabActive } = useTabVisibility(visibilityOptions);
 
-  // 默认使用 isCurrentTabActive，保证多开同一页面时只统计一个页签
+  // 默认使用 isCurrdentTabActive，保证多开同一页面时只统计一个页签
+  // 全局只有“当前被判定为 isCurrentTabActive 的页签”会继续轮询，其它页签（即使也可见）会停掉轮询。
   // 若业务希望“每个可见页签各自统计”，可在 visibilityOptions 中显式传入 useCurrentTabActive: false
   const activeRef =
     visibilityOptions && visibilityOptions.useCurrentTabActive === false

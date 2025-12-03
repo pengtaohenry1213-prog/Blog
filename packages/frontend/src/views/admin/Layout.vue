@@ -48,24 +48,96 @@
 </template>
 
 <script setup>
-import { computed } from 'vue';
+import { computed, onBeforeUnmount, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import { useAuthStore } from '@/stores/auth';
-import { useTabVisibility } from '@/composables/useTabVisibility';
+import { useBrowsingTime } from '@/composables/useTabVisibility';
+import { statsApi } from '@/api';
 import { DataBoard, Document, User, Loading } from '@element-plus/icons-vue';
 
 const route = useRoute();
 const authStore = useAuthStore();
 const activeMenu = computed(() => route.path);
+const currentPage = computed(() => route.name || route.path || 'admin');
 
-// 使用页签活跃状态管理
-// 这些变量可以在需要时使用，例如：
-// - isActive: 当前页签是否可见（可用于音视频控制、轮询等）
-// - isCurrentTabActive: 当前页签是否是所有页签中最活跃的
-// - tabId: 当前页签的唯一 ID
-// eslint-disable-next-line no-unused-vars
-const { isActive, isCurrentTabActive, tabId } = useTabVisibility();
+/*
+  用一套 useBrowsingTime({ storageKey: '__admin_browsing_time__', enableMultiTab: true })，
+  负责整个 /admin 区域的浏览时长。
 
+  通过 currentPage = computed(() => route.name || route.path) + watch(sessionTime) + watch(currentPage)，实现：
+    - 周期上报（periodic）
+    - 路由切换上报（route-switch）
+    - 卸载上报（unmount）
+*/
+
+// 使用浏览时间统计组件，自动上报浏览时间
+const {
+  totalTime,
+  sessionTime,
+  resetSession,
+  isTracking
+} = useBrowsingTime({
+  autoStart: true,
+  visibilityOptions: {
+    componentName: 'Layout.vue/useBrowsingTime',
+    enableMultiTab: true,
+    storageKey: '__admin_browsing_time__'
+  }
+});
+
+// 上报浏览时间间隔
+let lastReportedSession = 0;
+
+// 上报间隔时间(秒)
+const REPORT_GAP_SECONDS = 5;
+
+/**
+ * 上报浏览时间
+ */
+async function reportAdminBrowsing(page, reason = 'periodic') {
+  try {
+    await statsApi.reportBrowsingTime({
+      page,
+      totalTime: totalTime.value,
+      sessionTime: sessionTime.value,
+      isTracking: isTracking.value,
+      reason,
+      reportedAt: new Date().toISOString()
+    });
+  } catch (error) {
+    console.warn('Report admin browsing time failed:', error);
+  }
+}
+
+// 监听浏览时间，如果间隔大于上报间隔，则上报浏览时间
+watch(sessionTime, (val) => {
+  if (val - lastReportedSession >= REPORT_GAP_SECONDS) {
+    lastReportedSession = val;
+    reportAdminBrowsing(currentPage.value, 'periodic');
+  }
+});
+
+// 监听浏览页面，如果页面切换，则上报浏览时间
+watch(
+  currentPage,
+  (next, prev) => {
+    if (prev) {
+      reportAdminBrowsing(prev, 'route-switch');
+    }
+    lastReportedSession = 0;
+    resetSession();
+  },
+  { flush: 'post' }
+);
+
+// 卸载时上报浏览时间
+onBeforeUnmount(() => {
+  reportAdminBrowsing(currentPage.value, 'unmount');
+});
+
+/**
+ * 退出登录
+ */
 function handleLogout() {
   authStore.logout();
 }
@@ -125,7 +197,7 @@ function handleLogout() {
 
 .main {
   background: #f0f2f5;
-  padding: 20px;
+  padding: 0px;
 }
 
 .loading-container {

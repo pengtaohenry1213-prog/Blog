@@ -62,7 +62,9 @@ const pagination = ref({
   total: 0
 });
 
-// 
+/**
+ * 加载文章列表
+ */
 async function loadArticles() {
   loading.value = true;
   try {
@@ -91,23 +93,42 @@ const articleListPollingOptions = {
   immediate: false,    // 不在启动时立刻执行，由 onMounted 首次加载
   autoStart: true,     // 根据标签页可见性自动启动 / 暂停
   visibilityOptions: {
-    // 使用默认的可见性配置即可，如有需要可以在此单独调整
+    componentName: 'ArticleList.vue/useAutoPolling',
+    // 默认使用 isCurrentTabActive：多开同一页面/多窗口时，只保留一个主轮询者
+    enableMultiTab: true,
+    // 使用专用 storageKey，保证文章列表轮询有自己的一套“多页签竞争”通道
+    storageKey: '__admin_article_list_polling__'
   }
 };
 
-const { start: startArticleListPolling, stop: stopArticleListPolling } = useAutoPolling(
+// 文章列表自动轮询
+// 每次你在一个组件的 setup() 里调用 useAutoPolling(...)，它内部会在
+// 同一个组件实例上再注册一套 useTabVisibility（带你传进来的 visibilityOptions）。
+const { 
+  start: startArticleListPolling, 
+  stop: stopArticleListPolling
+} = useAutoPolling(
   () => loadArticles(),
   articleListPollingOptions
 );
 
+/**
+ * 新建文章
+ */
 function handleCreate() {
   router.push('/admin/articles/create');
 }
 
+/**
+ * 编辑文章
+ */
 function handleEdit(id) {
   router.push(`/admin/articles/edit/${id}`);
 }
 
+/**
+ * 删除文章
+ */
 async function handleDelete(id) {
   try {
     await ElMessageBox.confirm('确定要删除这篇文章吗？', '提示', {
@@ -124,6 +145,9 @@ async function handleDelete(id) {
   }
 }
 
+/**
+ * 获取状态类型
+ */
 function getStatusType(status) {
   const map = {
     draft: 'info',
@@ -133,6 +157,9 @@ function getStatusType(status) {
   return map[status] || 'info';
 }
 
+/**
+ * 获取状态文本
+ */
 function getStatusText(status) {
   const map = {
     draft: '草稿',
@@ -142,17 +169,26 @@ function getStatusText(status) {
   return map[status] || status;
 }
 
+/**
+ * 格式化日期
+ */
 function formatDate(date) {
   if (!date) return '-';
   return new Date(date).toLocaleString('zh-CN');
 }
 
+/**
+ * 改变每页显示条数
+ */
 function handleSizeChange(val) {
   pagination.value.pageSize = val;
   pagination.value.page = 1;
   loadArticles();
 }
 
+/**
+ * 改变页码
+ */
 function handlePageChange(val) {
   pagination.value.page = val;
   loadArticles();

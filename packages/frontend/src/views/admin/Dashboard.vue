@@ -1,5 +1,42 @@
 <template>
   <div class="dashboard">
+    <el-row :gutter="20" class="chart-row debug-row">
+      <el-col :span="24">
+        <el-card>
+          <div class="card-header">
+            <span>调试面板 · 浏览时长 (服务端汇总)</span>
+          </div>
+          <div class="debug-panel">
+            <div class="debug-item">
+              <span class="debug-label">累计总浏览时长</span>
+              <span class="debug-value">{{ serverBrowsingSummary.totalSessionTime.toFixed(1) }} s</span>
+            </div>
+            <div class="debug-item">
+              <span class="debug-label">历史会话上报总时长</span>
+              <span class="debug-value">{{ serverBrowsingSummary.totalReportedTime.toFixed(1) }} s</span>
+            </div>
+            <div class="debug-item">
+              <span class="debug-label">上报次数</span>
+              <span class="debug-value">{{ serverBrowsingSummary.reportCount }} 次</span>
+            </div>
+            <div class="debug-item">
+              <span class="debug-label">最后上报时间</span>
+              <span class="debug-value">
+                <span v-if="serverBrowsingSummary.lastReportedAt">
+                  {{ new Date(serverBrowsingSummary.lastReportedAt).toLocaleString() }}
+                </span>
+                <span v-else>--</span>
+              </span>
+            </div>
+            <div class="debug-item debug-tip">
+              <span class="debug-label">提示</span>
+              <span class="debug-value">实时统计已提升至 Layout.vue，通过路由范围共享</span>
+            </div>
+          </div>
+        </el-card>
+      </el-col>
+    </el-row>
+
     <el-row :gutter="20" class="kpi-row">
       <el-col :span="6">
         <el-card>
@@ -98,50 +135,20 @@
       </el-col>
     </el-row>
 
-    <!-- 调试面板：展示浏览时长统计数据 -->
-    <el-row :gutter="20" class="chart-row debug-row">
-      <el-col :span="24">
-        <el-card>
-          <div class="card-header">
-            <span>调试面板 · 浏览时长</span>
-          </div>
-          <div class="debug-panel">
-            <div class="debug-item">
-              <span class="debug-label">本次会话浏览时长（前端实时）</span>
-              <span class="debug-value">{{ sessionTime.toFixed(1) }} s</span>
-            </div>
-            <div class="debug-item">
-              <span class="debug-label">累计总浏览时长（当前会话）</span>
-              <span class="debug-value">{{ totalTime.toFixed(1) }} s</span>
-            </div>
-            <div class="debug-item">
-              <span class="debug-label">历史会话总时长（服务端）</span>
-              <span class="debug-value">{{ serverBrowsingSummary.totalSessionTime.toFixed(1) }} s</span>
-            </div>
-            <div class="debug-item">
-              <span class="debug-label">上报次数 / 最后上报时间</span>
-              <span class="debug-value">
-                {{ serverBrowsingSummary.reportCount }} 次
-                <span v-if="serverBrowsingSummary.lastReportedAt">
-                  · {{ new Date(serverBrowsingSummary.lastReportedAt).toLocaleString() }}
-                </span>
-              </span>
-            </div>
-          </div>
-        </el-card>
-      </el-col>
-    </el-row>
+    
   </div>
 </template>
 
 <script setup>
-import { ref, onBeforeUnmount, watch } from 'vue';
+import { ref, onBeforeUnmount } from 'vue';
 import BaseEChart from '@/components/BaseEChart.vue';
 import { articleApi, userApi, statsApi } from '@/api';
-import { useAutoPolling, useBrowsingTime } from '@/composables/useTabVisibility';
+import { useAutoPolling } from '@/composables/useTabVisibility';
 
+// 加载状态
 const isLoading1 = ref(false);
 
+// 统计数据
 const stats = ref({
   totalArticles: 0,
   totalUsers: 0,
@@ -149,64 +156,25 @@ const stats = ref({
   totalViews: 0
 });
 
+// 图表数据
 const visitTrendOptions = ref({});
 const sourcePieOptions = ref({});
 const topArticlesOptions = ref({});
 const visitHeatmapOptions = ref({});
 
-/**
- * 浏览时长统计：
- * - 自动根据页签活跃状态统计本次会话和总浏览时长（单位：秒）
- * - 默认基于 isCurrentTabActive，保证多开同一后台页签时，同一时间只统计一个活跃页签
- * - 数据会定期以及在离开页面时上报到后端
- */
-const {
-  totalTime,
-  sessionTime,
-  isTracking
-} = useBrowsingTime({
-  autoStart: true,
-  visibilityOptions: {
-    // 复用多页签通信能力，确保只有“最活跃”的后台页签在计时
-    enableMultiTab: true,
-    storageKey: '__dashboard_browsing_time__',
-    // 默认使用 isCurrentTabActive 统计时长，可按需通过 useCurrentTabActive: false 改为按可见性统计
-  }
+// 服务端汇总数据
+const serverBrowsingSummary = ref({
+  totalSessionTime: 0,
+  totalReportedTime: 0,
+  reportCount: 0,
+  lastReportedAt: null
 });
 
 /**
- * 将浏览时长上报到后端
- * @param {'periodic' | 'unload'} reason 上报原因：周期上报 / 页面卸载
+ * 构建访问趋势图配置
+ * @param {Object} data 访问趋势数据
+ * @returns {Object} 访问趋势图配置
  */
-async function reportBrowsing(reason = 'periodic') {
-  try {
-    await statsApi.reportBrowsingTime({
-      page: 'admin-dashboard',
-      totalTime: totalTime.value,
-      sessionTime: sessionTime.value,
-      isTracking: isTracking.value,
-      reason,
-      reportedAt: new Date().toISOString()
-    });
-  } catch (error) {
-    // 调试场景可接受失败，不打断页面逻辑
-    console.warn('Report browsing time failed:', error);
-  }
-}
-
-// 会话时长每增加 5 秒，上报一次（减少请求频率）
-let lastReportedSession = 0;
-watch(
-  sessionTime,
-  (val) => {
-    if (val - lastReportedSession >= 5) {
-      lastReportedSession = val;
-      reportBrowsing('periodic');
-    }
-  }
-);
-
-// 构建访问趋势图配置
 function buildVisitTrendOptions(data) {
   // 如果后端返回了真实数据，使用真实数据；否则使用 mock 数据
   const days = data?.days || Array.from({ length: 7 }).map((_, i) => `第 ${i + 1} 天`);
@@ -237,7 +205,11 @@ function buildVisitTrendOptions(data) {
   };
 }
 
-// 构建流量来源分布图配置
+/**
+ * 构建流量来源分布图配置
+ * @param {Object} data 流量来源分布数据
+ * @returns {Object} 流量来源分布图配置
+ */
 function buildSourcePieOptions(data) {
   // 如果后端返回了真实数据，使用真实数据；否则使用 mock 数据
   const pieData = data || [
@@ -262,7 +234,11 @@ function buildSourcePieOptions(data) {
   };
 }
 
-// 构建热门文章 Top 5 配置
+/**
+ * 构建热门文章 Top 5 配置
+ * @param {Object} data 热门文章数据
+ * @returns {Object} 热门文章 Top 5 图配置
+ */
 function buildTopArticlesOptions(data) {
   // 如果后端返回了真实数据，使用真实数据；否则使用 mock 数据
   const articleNames = data?.names || ['文章 A', '文章 B', '文章 C', '文章 D', '文章 E'];
@@ -286,7 +262,11 @@ function buildTopArticlesOptions(data) {
   };
 }
 
-// 构建访问时间分布图配置
+/**
+ * 构建访问时间分布图配置
+ * @param {Object} data 访问时间分布数据
+ * @returns {Object} 访问时间分布图配置
+ */
 function buildVisitHeatmapOptions(data) {
   const hours = Array.from({ length: 24 }).map((_, i) => `${i}:00`);
   const daysOfWeek = ['周一', '周二', '周三', '周四', '周五', '周六', '周日'];
@@ -347,18 +327,12 @@ function buildVisitHeatmapOptions(data) {
   };
 }
 
-// 服务端浏览时长汇总（用于调试面板展示）
-const serverBrowsingSummary = ref({
-  totalSessionTime: 0,
-  totalReportedTime: 0,
-  reportCount: 0,
-  lastReportedAt: null
-});
-
-// 加载所有数据（异步 setup）
+/**
+ * 加载所有数据
+ */
 async function loadAllData() {
   try {
-    // 并行加载所有数据
+    // 并行加载所有API数据
     const [articlesRes, usersRes, overviewRes, browsingSummaryRes] = await Promise.all([
       articleApi.getList({ page: 1, pageSize: 1 }),
       userApi.getList({ page: 1, pageSize: 1 }),
@@ -393,7 +367,17 @@ async function loadAllData() {
       topArticlesOptions.value = buildTopArticlesOptions(overview.topArticles);
       visitHeatmapOptions.value = buildVisitHeatmapOptions(overview.visitHeatmap);
     }
+
+    // 服务端汇总数据
+    if (browsingSummaryRes) {
+      const summary = browsingSummaryRes;
+      serverBrowsingSummary.value.totalSessionTime = summary.totalSessionTime || 0;
+      serverBrowsingSummary.value.totalReportedTime = summary.totalReportedTime || 0;
+      serverBrowsingSummary.value.reportCount = summary.reportCount || 0;
+      serverBrowsingSummary.value.lastReportedAt = summary.lastReportedAt || null;
+    }
     else {
+      debugger;
       // 使用其他 API 的数据作为 fallback
       stats.value.totalArticles = articlesRes.total || 0;
       stats.value.totalUsers = usersRes.total || 0;
@@ -407,15 +391,6 @@ async function loadAllData() {
       sourcePieOptions.value = buildSourcePieOptions();
       topArticlesOptions.value = buildTopArticlesOptions();
       visitHeatmapOptions.value = buildVisitHeatmapOptions();
-    }
-    
-    // 服务端浏览时长汇总（调试展示用）
-    if (browsingSummaryRes && browsingSummaryRes) {
-      const summary = browsingSummaryRes;
-      serverBrowsingSummary.value.totalSessionTime = summary.totalSessionTime || 0;
-      serverBrowsingSummary.value.totalReportedTime = summary.totalReportedTime || 0;
-      serverBrowsingSummary.value.reportCount = summary.reportCount || 0;
-      serverBrowsingSummary.value.lastReportedAt = summary.lastReportedAt || null;
     }
   } catch (error) {
     console.error('Load dashboard data error:', error);
@@ -446,10 +421,17 @@ async function refreshDashboard(showLoading = false) {
 /**
  * 轮询配置
  */
- const options = {
-  interval: 30*1000, // 轮询间隔，默认 30 秒
+const options = {
+  interval: 30 * 1000, // 轮询间隔，默认 30 秒
   immediate: false, // 是否立即执行，默认不立即执行
-  autoStart: false // 是否自动启动，默认自动启动
+  autoStart: false, // 是否自动启动，默认自动启动
+  visibilityOptions: {
+    componentName: 'Dashboard.vue/useAutoPolling',
+    // 默认使用 isCurrentTabActive：全局只保留一个主轮询者
+    enableMultiTab: true,
+    // Dashboard 使用独立的 storageKey 做多页签竞争，不和其它轮询混在一起
+    storageKey: '__admin_dashboard_polling__'
+  }
 };
 
 // Dashboard 需要每 30 秒刷新一次统计数据，但页签不活跃时应暂停
@@ -470,9 +452,6 @@ onBeforeUnmount(() => {
   sourcePieOptions.value = null;
   topArticlesOptions.value = null;
   visitHeatmapOptions.value = null;
-
-  // 页面卸载前补充一次上报，防止最后一段浏览时长丢失
-  reportBrowsing('unload');
 
   stopPolling(true);
 });
@@ -523,11 +502,29 @@ onBeforeUnmount(() => {
   height: 280px;
 }
 .debug-panel {
-  display: flex;  flex-wrap: wrap;  gap: 16px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
 }
 .debug-item {
-  min-width: 220px;  display: flex;  justify-content: space-between;  font-size: 13px;
+  min-width: 220px;
+  display: flex;
+  justify-content: start;
+  font-size: 13px;
 }
-.debug-label { color: #909399;}
-.debug-value { font-weight: 500;  color: #409eff;}
+.debug-item:last-child {
+  width: 100vw;
+}
+.debug-label {
+  color: #909399;
+}
+.debug-value {
+  font-size: 1.0rem;
+  font-weight: 500;
+  text-indent: 0.5rem;
+  color: #409eff;
+}
+.debug-tip .debug-value {
+  color: #67c23a;
+}
 </style>

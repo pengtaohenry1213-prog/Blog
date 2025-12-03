@@ -32,9 +32,15 @@ const router = createRouter({
     },
     {
       path: '/admin',
-      component: () => import(/* webpackChunkName: "admin" */ '@/views/admin/Layout.vue'),
+      component: () => import(/* webpackChunkName: "frontend_admin" */ '@/views/admin/Layout.vue'),
       meta: { requiresAuth: true },
       children: [
+        {
+          path: 'test',
+          name: 'test',
+          component: () => import(/* webpackChunkName: "frontend_admin" */ '@/views/admin/Test.vue'),
+          meta: { requireAuth: false },
+        },
         {
           path: '',
           redirect: '/admin/dashboard'

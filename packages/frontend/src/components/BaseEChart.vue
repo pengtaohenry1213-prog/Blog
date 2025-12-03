@@ -90,11 +90,14 @@ onMounted(async () => {
   window.addEventListener('resize', resizeChart)
 })
 
+// console.error('BaseEchart.vue -> useTabVisibility');
+
 /**
  * 页签非活跃时暂停图表动画，重新激活时恢复动画
  * 使用 useTabVisibility 的状态变化回调实现
  */
 useTabVisibility({
+  componentName: 'BaseChart.vue/onInactive_onActive',
   onInactive: () => {
     if (chartInstance) {
       chartInstance.setOption({ animation: false }, false)

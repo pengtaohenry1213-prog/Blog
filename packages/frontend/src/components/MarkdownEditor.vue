@@ -23,8 +23,11 @@ let workerPort = null
 let analysisTimer = null // 防抖定时器
 let isWorkerInitialized = false // 标记 Worker 是否已初始化
 
+console.error('MarkdownEditor.vue -> useTabVisibility');
+
 // 页签可见性：当标签页不活跃时暂停内容分析（防抖 500ms）
 const { isActive } = useTabVisibility({
+  componentName: 'MarkdownEditor.vue/isActive',
   // Markdown 编辑器一般只在单个后台管理标签使用，但保持多标签支持配置
   enableMultiTab: true,
   onInactive: () => {
