@@ -74,16 +74,8 @@ export function useTabVisibility(options = {}) {
         └─ 多页签启用时删除localStorage中自身状态
   */
 
-  /*
-    “多页签竞争”指的是同一应用被多个浏览器标签页或窗口同时打开时，它们需要协商“谁算作当前真正活跃、能够触发轮询或统计”等行为。
-    useTabVisibility 通过 localStorage 通信 + 定期清理的机制，让所有打开的标签页知道最新的“活跃者”，
-    避免多个页面同时执行相同任务（比如重复轮询接口、重复统计浏览时长）。
-    当某个标签页变为可见，它会把自己的状态写入存储并争取成为“最活跃”页签；
-    其他页签接收到存储事件后 会让出“主导权”，从而实现多标签之间的竞争与协作。
-  */
-
   const {
-    expiryTime = 5000,
+    expiryTime = 50*1000, // 50s
     cleanupInterval = 10*1000, // 默认10s
     enableMultiTab = true,
     storageKey = '__tab_visibility_state__', // 建议调用方使用自己的 storageKey, 如: ‘__tab_xxx_polling__’
@@ -98,8 +90,9 @@ export function useTabVisibility(options = {}) {
   const tabId = ref(generateTabId());
   // 当前页签是否活跃（基于 visibilitychange）
   const initialVisibility = hasDocument ? document.visibilityState === 'visible' : true;
-  console.warn('document.visibilityState: ',document.visibilityState)
   const isActive = ref(initialVisibility);
+  
+  console.warn('document.visibsilityState: ', initialVisibility, ', isActive = ', isActive.value)
 
   // 默认使用 isCurrdentTabActive，保证多开同一页面时只统计一个页签
   // 全局只有“当前被判定为 isCurrentTabActive 的页签”会继续轮询，其它页签（即使也可见）会停掉轮询。
@@ -117,8 +110,10 @@ export function useTabVisibility(options = {}) {
     return `tab_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
   }
 
+
   /**
    * 更新当前页签状态到 localStorage
+   * 状态是动态的：当另一个页签变为可见时，它会成为“最活跃的”，之前活跃的页签的 isCurrentTabActive 会变为 false
    */
   function updateLocalStorage() {
     // 有 window 的情况下才会启动；单页签/SSR 都不会跑。
@@ -133,157 +128,160 @@ export function useTabVisibility(options = {}) {
       };
       // 更新 localStorage
       localStorage.setItem(storageKey, JSON.stringify(state));
+      console.error(`localStorage(${storageKey}).isActive = ${isActive.value}, tabId = ${tabId.value}`)
+
+      
     } catch (error) {
       console.warn('Failed to update localStorage:', error);
     }
   }
 
   /**
-   * 从 localStorage 读取所有页签状态
+   * 读取并解析 localStorage 中的页签状态（内部辅助函数）
+   * @returns {Object|null} 解析后的状态对象，如果不存在或解析失败则返回 null
    */
-  function getAllTabsState() {
-    // 有 window 的情况下才会启动；单页签/SSR 都不会跑。
-    if (!enableMultiTab || !hasWindow) return {};
-
+  function readTabStateFromStorage() {
+     // 有 window 的情况下才会启动；单页签/SSR 都不会跑。
+    if (!enableMultiTab || !hasWindow) return null;
+    
     try {
-      // 读取 localStorage
       const stateStr = localStorage.getItem(storageKey);
-      if (!stateStr) return {};
-
-      const state = JSON.parse(stateStr);
-      // 检查是否过期
-      const now = Date.now();
-      if (now - state.timestamp > expiryTime) {
-        // 过期了，清除
-        localStorage.removeItem(storageKey);
-        return {};
-      }
-
-      return state;
+      if (!stateStr) return null;
+      
+      return JSON.parse(stateStr);
     } catch (error) {
       console.warn('Failed to read localStorage:', error);
-      return {};
+      return null;
     }
   }
 
   /**
-   * 判断当前页签 是否是 最活跃的
-   * 基于 localStorage 的最新状态重新判断“当前页签是不是最活跃”。这是最关键的逻辑，
-   * 因为这是多 tab 通信的核心，决定了“谁说了算”。
+   * 检查状态是否过期
+   * @param {Object} state 页签状态对象
+   * @returns {boolean} 是否过期
+   */
+  function isStateExpired(state) {
+    if (!state || !state.timestamp) return false;
+    const now = Date.now();
+    return now - state.timestamp > expiryTime;
+  }
+
+  /**
+   * 清除 localStorage 中的页签状态
+   */
+  function removeStorageState() {
+    try {
+      localStorage.removeItem(storageKey);
+      console.error(`localStorage.removeItem: `, storageKey);
+    } catch (error) {
+      console.warn('Failed to remove localStorage:', error);
+    }
+  }
+
+  /**
+   * 从 localStorage 读取所有页签状态
+   * - Used in checkCurrentTabActive
+   * - Used in handleVisibilityChange
+   */
+  function getAllTabsState() {
+    const state = readTabStateFromStorage();
+    if (!state) return {};
+    
+    // 检查状态是否过期
+    if (isStateExpired(state)) {
+      // 过期了，清除
+      removeStorageState();
+      return {};
+    }
+    
+    return state;
+  }
+
+
+  /**
+   * 清理过期的页签状态, 把 localStorage 里已经过期、且不是当前 tab 的记录清掉
+   */
+  function cleanupExpiredTabs() {
+    const state = readTabStateFromStorage();
+    if (!state) return;
+    
+    // 检查状态是否过期, 如果存储的状态过期了，且不是当前页签的，清除它
+    if (isStateExpired(state) && state.tabId !== tabId.value) {
+      removeStorageState();
+    }
+  }
+
+  /**
+   * 判断当前页签是否是所有页签中最活跃的
+   * 
+   * 基于 localStorage 通信的最新状态重新判断"当前页签是不是最活跃"。
+   * 这是多 tab 通信的核心逻辑，决定了"以谁为主"。
+   * 
+   * 调用位置：
+   *  - init(): 初始化时通过 currentTabActiveAndUpdate() 调用
+   *  - handleVisibilityChange(): 页签可见性变化时调用
+   *  - handleStorageChange(): 其他页签更新状态时调用
+   *  - 定时清理任务: 定期检查当前页签是否仍是最活跃的
+   * 
+   * 多页签竞争机制：
+   *  1. 读取 localStorage 中存储的页签状态（已包含过期检查）
+   *  2. 如果存储的是其他页签且该页签是活跃的 → isCurrentTabActive = false
+   *  3. 如果存储的是当前页签，或没有存储，或存储的页签不活跃 → isCurrentTabActive = isActive
    */
   function checkCurrentTabActive() {
     /*
-      ┌─────────────────────────────────────────────────────────┐
-      │ 开始: checkCurrentTabActive()                            │
-      └───────────────────────────┬─────────────────────────────┘
-                                  ▼
-      ┌─────────────────────────────────────────────────────────┐
-      │ 条件1: 未启用多页签通信 或 无window环境?                │
-      ├─────────────┬───────────────────────────────────────────┤
-      │     是      │ 设isCurrentTabActive = isActive，打印日志 │
-      │             │ ──────────────▶ 结束                      │
-      │     否      │ 继续下一步                                │
-      └─────────────┴───────────────────┬───────────────────────┘
-                                        ▼
-      ┌─────────────────────────────────────────────────────────┐
-      │ 读取localStorage中所有页签状态(allTabsState)             │
-      └───────────────────────────┬─────────────────────────────┘
-                                  ▼
-      ┌─────────────────────────────────────────────────────────┐
-      │ 条件2: 无存储的tabId 或 存储tabId等于当前页签tabId?       │
-      ├─────────────┬───────────────────────────────────────────┤
-      │     是      │ 设isCurrentTabActive = isActive，打印日志 │
-      │             │ ──────────────▶ 结束                      │
-      │     否      │ 继续下一步                                │
-      └─────────────┴───────────────────┬───────────────────────┘
-                                        ▼
-      ┌─────────────────────────────────────────────────────────┐
-      │ 条件3: 存储的页签是活跃状态 且 存储tabId≠当前tabId?     │
-      ├─────────────┬───────────────────────────────────────────┤
-      │     是      │ 设isCurrentTabActive = false，打印日志    │
-      │     否      │ 设isCurrentTabActive = isActive，打印日志 │
-      └─────────────┴───────────────────┬───────────────────────┘
-                                        ▼
-      ┌─────────────────────────────────────────────────────────┐
-      │ 补充日志: 若当前页签不活跃/非最活跃，打印错误日志        │
-      └─────────────────────────────────────────────────────────┘
-                                  ▼
-                              流程结束
-
+      多页签竞争机制
+        - 读取 localStorage 中存储的页签状态
+        - 如果存储的是其他页签且该页签是活跃的 → isCurrentTabActive = false
+        - 如果存储的是当前页签，或没有存储，或存储的页签不活跃 → isCurrentTabActive = isActive
     */
 
-    // 如果未启用多页签通信，或者没有 window，则当前页签是活跃的
-    // 有 window 的情况下才会启动；单页签/SSR 都不会跑。
+    // 条件1: 未启用多页签通信 或 无window环境(单页签/SSR)
     if (!enableMultiTab || !hasWindow) {
-      // !hasWindow: 单页签/SSR 都不会跑, 所以 isCurrentTabActive 直接用 isActive 即可。
       isCurrentTabActive.value = isActive.value;
-      console.log('[判断当前页签是否是最活跃的] single-tab', {
-        isActive: isActive.value,
-        isCurrentTabActive: isCurrentTabActive.value,
-      });
       return;
     }
 
-    // 读取所有页签状态
+    // 读取所有页签状态（getAllTabsState 内部会检查过期并清除过期状态）
     const allTabsState = getAllTabsState();
-    // 如果没有其他页签的状态(没有tabId)，或者当前页签就是存储的页签(tabId==tabId)，则当前页签是活跃的
+    
+    // 条件2: 无存储的tabId 或 tabId===当前tabId
+    // 说明：没有其他页签记录，或记录的就是当前页签，则当前页签就是最活跃的
     if (!allTabsState.tabId || allTabsState.tabId === tabId.value) {
       isCurrentTabActive.value = isActive.value;
-      console.warn('如果没有其他页签的状态(没有tabId)，或者当前页签就是存储的页签(tabId==tabId)，则当前页签是活跃的: ', {
-        isActive: isActive.value,
-        isCurrentTabActive: isCurrentTabActive.value,
-        storage: allTabsState,
-      });
       return;
     }
 
-    // 如果其他页签是活跃的，且时间戳较新，则当前页签不是最活跃的
+    // 条件3: 存储的是其他页签的状态
+    // 如果其他页签是活跃的，则当前页签不是最活跃的
     if (allTabsState.isActive && allTabsState.tabId !== tabId.value) {
+      // 状态是动态的：当另一个页签变为可见时，它会成为"最活跃的"，
+      // 之前活跃的页签的 isCurrentTabActive 会变为 false
       isCurrentTabActive.value = false;
-      console.warn('如果其他页签是活跃的，且时间戳较新，则当前页签不是最活跃的: ', {
-        isActive: isActive.value,
-        isCurrentTabActive: isCurrentTabActive.value,
-        storage: allTabsState,
-      });
-      console.warn('[checkCurrentTabActive] 当前页签不是最活跃的');
+      console.warn('[checkCurrentTabActive] 状态是动态的：当另一个页签变为可见时，它会成为"最活跃的"，之前活跃的页签的 isCurrentTabActive 会变为 false! allTabsState.isActive = ', allTabsState.isActive, ', allTabsState.tabId = ', allTabsState.tabId, ', tabId.value = ', tabId.value);
     } else {
-      // 其他页签不活跃，或者当前页签就是存储的页签，则当前页签是活跃的
+      // 其他页签不活跃（isActive=false），则当前页签可以成为最活跃的
       isCurrentTabActive.value = isActive.value;
-      console.warn('其他页签不活跃，或者当前页签就是存储的页签，则当前页签是活跃的: ', {
-        isActive: isActive.value,
-        isCurrentTabActive: isCurrentTabActive.value,
-        storage: allTabsState,
-      });
     }
 
     if(!isActive.value) {
       console.error('当前页签不活跃!');
     }
     if(!isCurrentTabActive.value) {
-      console.error('当前页签不是所有页签中活跃的!');
+      console.error('当前页签不是最活跃的页签!');
     }
   }
 
+
   /**
-   * 清理过期的页签状态, 把 localStorage 里已经过期、且不是当前 tab 的记录清掉
+   * updateLocalStorage() + checkCurrentTabActive()
    */
-  function cleanupExpiredTabs() {
-    if (!enableMultiTab || !hasWindow) return;
+  function currentTabActiveAndUpdate() {
+    // 更新当前页签状态到 localStorage
+    updateLocalStorage();
 
-    try {
-      const stateStr = localStorage.getItem(storageKey);
-      if (!stateStr) return;
-
-      const state = JSON.parse(stateStr);
-      const now = Date.now();
-
-      // 如果存储的状态过期了，且不是当前页签的，清除它
-      if (now - state.timestamp > expiryTime && state.tabId !== tabId.value) {
-        localStorage.removeItem(storageKey);
-      }
-    } catch (error) {
-      console.warn('Failed to cleanup expired tabs:', error);
-    }
+    // 检查当前页签是否是最活跃的
+    checkCurrentTabActive();
   }
 
   /**
@@ -317,11 +315,7 @@ export function useTabVisibility(options = {}) {
     if (previousState === nextState) {
       // 如果启用了多页签通信，则更新 localStorage 并检查当前页签是否是最活跃的
       if (enableMultiTab) {
-        // 更新 localStorage
-        updateLocalStorage();
-
-        // 检查当前页签是否是最活跃的
-        checkCurrentTabActive();
+        currentTabActiveAndUpdate();
       } else {
         // 如果没有启用多页签通信，则当前页签的状态就是活跃的
         isCurrentTabActive.value = nextState;
@@ -381,37 +375,44 @@ export function useTabVisibility(options = {}) {
 
     // 组合式里
     const { componentName = 'unknown' } = options;
-    console.error(`组件 ${componentName} 挂载时初始化 -> init()`);
+    console.error(`组件 ${componentName} 挂载时初始化 in init()`);
 
-    // 保存事件处理函数的引用，以便后续清理
+    // 缓存事件处理函数的引用，以便后续清理
     visibilityHandler = handleVisibilityChange;
+
     // 监听当前页签的 visibilitychange 事件
     document.addEventListener('visibilitychange', visibilityHandler);
 
     // 监听其他页签的 localStorage 变化
     if (enableMultiTab) {
-      // 保存事件处理函数的引用，以便后续清理
+      // 缓存事件处理函数的引用，以便后续清理
       storageHandler = handleStorageChange;
-      // 监听其他页签的 localStorage 变化
+      // 监听 window.storage 事件, 以同步其他页签的状态变化
       window.addEventListener('storage', storageHandler);
     }
 
-    // 监听当前页签的 visibilitychange 事件
+    // 如果启用多页签通信
     if (enableMultiTab) {
-      // console.error('[init] if (enableMultiTab) { updateLocalStorage()');
-      // 更新当前页签状态到 localStorage
-      updateLocalStorage();
-      // 检查当前页签是否是最活跃的
-      checkCurrentTabActive();
+      /*
+        原理: 
+          - “多页签竞争”指的是同一应用被多个浏览器标签页或窗口同时打开时，它们需要协商“谁算作当前真正活跃、能够触发轮询或统计”等行为。
+          - useTabVisibility 通过 localStorage 通信 + 定期清理的机制，让所有打开的标签页知道最新的“活跃者”，
+        作用: 
+          - 避免多个页面同时执行相同任务（比如重复轮询接口、重复统计浏览时长）。
+          - 当某个标签页变为可见，它会把自己的状态写入存储并争取成为“最活跃”页签；
+          - 其他页签接收到存储事件后 会让出“主导权”，从而实现多标签之间的竞争与协作。
+      */
 
-      // 定期清理过期的页签状态
+      currentTabActiveAndUpdate();
+
+      // 定期清理过期的页签状态 && 检查当前页签哪个是"当前真正活跃"
       cleanupTimer = setInterval(() => {
         // 清理过期的页签状态
         cleanupExpiredTabs();
-        // 检查当前页签是否是最活跃的
+
+        // 检查当前页签是否是最活跃的, 避免多页签 重复执行同一事情.
         checkCurrentTabActive();
-        // console.error('[init] cleanupTimer = setInterval(() => { -> checkCurrentTabActive()');
-      }, cleanupInterval);
+      }, cleanupInterval); // cleanupInterval: 清理间隔（毫秒）
     } else {
       // 如果没有启用多页签通信，则当前页签的状态就是活跃的
       isCurrentTabActive.value = isActive.value;
@@ -455,6 +456,7 @@ export function useTabVisibility(options = {}) {
           const state = JSON.parse(stateStr);
           if (state.tabId === tabId.value) {
             localStorage.removeItem(storageKey);
+            console.error('3. ----- localStorage.removeItem: ', storageKey);
           }
         }
       } catch (error) {

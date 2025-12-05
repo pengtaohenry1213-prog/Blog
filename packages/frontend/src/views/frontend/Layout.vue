@@ -16,6 +16,9 @@
           <el-menu-item index="/search">
             <router-link to="/search">搜索</router-link>
           </el-menu-item>
+          <el-menu-item index="/canvasText">
+            <router-link to="/canvasText">canvasText</router-link>
+          </el-menu-item>
         </el-menu>
       </div>
     </el-header>

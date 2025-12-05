@@ -27,6 +27,11 @@ const router = createRouter({
           path: 'search',
           name: 'Search',
           component: () => import(/* webpackChunkName: "frontend" */ '@/views/frontend/Search.vue')
+        },
+        {
+          path: 'canvasText',
+          name: 'CanvasText',
+          component: () => import(/* webpackChunkName: "frontend" */ '@/views/frontend/CanvasText.vue')
         }
       ]
     },

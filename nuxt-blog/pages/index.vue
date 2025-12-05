@@ -131,16 +131,28 @@ watchEffect(() => {
 function goToDetail(id) {
   // 跳转到原 Vue3 项目的文章详情页
   // 注意：这里需要根据实际路由配置调整
-  if (process.client) {
-    window.location.href = `/article/${id}`;
-  } else {
-    router.push(`/article/${id}`);
-  }
+  // if (process.client) {
+  //   window.location.href = `/article/${id}`;
+  // } else {
+  //   router.push(`/article/${id}`);
+  // }
+
+  // 统一使用 router，避免服务端和客户端不一致
+  router.push(`/article/${id}`);
 }
 
+// function formatDate(date) {
+//   if (!date) return '';
+//   return new Date(date).toLocaleDateString('zh-CN');
+// }
 function formatDate(date) {
   if (!date) return '';
-  return new Date(date).toLocaleDateString('zh-CN');
+  // 使用固定的格式，避免服务端和客户端时区差异
+  const d = new Date(date);
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
 }
 
 async function handleSizeChange(val) {

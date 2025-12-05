@@ -43,6 +43,7 @@ services:
     restart: unless-stopped
 
   # 后端服务
+  #   context: .. 表示构建上下文是 docker 目录的上一级，即项目根目录 /Users/taopeng/Desktop/Blog-SSR
   backend:
     build:
       context: ..
@@ -81,6 +82,7 @@ services:
     restart: unless-stopped
 
   # Nuxt3 SSR 服务（首页）
+  #   context: .. 表示构建上下文是 docker 目录的上一级，即项目根目录 /Users/taopeng/Desktop/Blog-SSR
   nuxt:
     build:
       context: ..
@@ -107,6 +109,7 @@ services:
     restart: unless-stopped
 
   # 前端服务（Vue3 SPA，其他页面）
+  #   context: .. 表示构建上下文是 docker 目录的上一级，即项目根目录 /Users/taopeng/Desktop/Blog-SSR
   frontend:
     build:
       context: ..

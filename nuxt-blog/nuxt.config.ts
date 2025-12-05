@@ -122,6 +122,19 @@ export default defineNuxtConfig({
     //   routes: ['/'], // 只预渲染首页
     //   crawlLinks: false // 不爬取链接，只预渲染指定路由
     // }
-  }
-})
+  },
+
+  // 开发环境禁用 hydration 警告（仅用于调试）
+  vue: {
+    compilerOptions: {
+      isCustomElement: (tag) => false,
+    },
+  },
+  
+  // 或者使用这个配置来更详细地查看 hydration 错误
+  // ssr: true,
+  // experimental: {
+  //   payloadExtraction: false,
+  // },
+});
 

@@ -362,7 +362,7 @@ async function loadAllData() {
       
       // 设置图表数据
       visitTrendOptions.value = buildVisitTrendOptions(overview.visitTrend);
-      console.log('overview.sourcePie = ', overview.sourcePie)
+      // console.log('overview.sourcePie = ', overview.sourcePie)
       sourcePieOptions.value = buildSourcePieOptions(overview.sourcePie);
       topArticlesOptions.value = buildTopArticlesOptions(overview.topArticles);
       visitHeatmapOptions.value = buildVisitHeatmapOptions(overview.visitHeatmap);
