@@ -1,5 +1,5 @@
 {
-  "name": "@blog/nuxt-blog",
+  "name": "@blog/nuxt-ssr",
   "version": "1.0.0",
   "type": "module",
   "private": true,

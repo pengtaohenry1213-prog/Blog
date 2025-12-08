@@ -20,7 +20,6 @@
 #      ├── pnpm-workspace.yaml       # pnpm workspaces 配置
 #      |     packages:
 #      |       - 'packages/*'
-#      |       - 'nuxt-blog'
 #      ├── package.json              # 根项目配置（workspace 管理）
 #      └── pnpm-lock.yaml
 #    

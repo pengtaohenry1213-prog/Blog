@@ -23,7 +23,7 @@
  * - 更好的集成：与 Nuxt3 运行时配置集成
  * - 类型支持：更好的 TypeScript 支持
  * 
- * 现在 nuxt-blog 使用 $fetch，而原 Vue3+Vite 项目继续使用 axios，互不干扰。
+ * 现在 nuxt-ssr 使用 $fetch，而原 Vue3+Vite 项目继续使用 axios，互不干扰。
  * 代码已通过 lint 检查，可以正常使用。
  */
 export const useRequest = () => {

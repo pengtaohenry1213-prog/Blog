@@ -54,7 +54,7 @@
 </template>
 
 <script setup>
-console.warn('[nuxt-blog/pages/index.vue 这里是SSR Nuxt首页] index.vue');
+console.warn('[nuxt-ssr/pages/index.vue 这里是SSR Nuxt首页] index.vue');
 
 import { ref, computed, watchEffect } from 'vue';
 import { useArticleApi } from '~/composables/useArticleApi';

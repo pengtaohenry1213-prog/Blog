@@ -38,17 +38,19 @@ Blog/
 │   ├── optimization.md       # 性能与安全优化
 │   ├── development.md        # 开发规范与约定
 │   └── workflow.md           # 团队协作工作流
-├── nuxt-blog/               # Nuxt 3 SSR 项目（首页 SSR 优化）
-│   ├── pages/               # 页面（文件系统路由）
-│   │   └── index.vue        # 首页（SSR）
-│   ├── composables/         # 组合式函数（自动导入）
-│   ├── stores/              # Pinia 状态管理
-│   ├── components/          # Vue 组件（自动导入）
-│   ├── layouts/             # 布局组件
-│   ├── plugins/             # 插件（自动加载）
-│   ├── server/              # 服务端代码
-│   └── nuxt.config.ts       # Nuxt 配置
-├── packages/                 # 子包目录（monorepo workspace）
+├── packages/
+│   ├── nuxt-ssr/            # Nuxt 3 SSR 项目（首页 SSR 优化）
+│   │   ├── pages/               # 页面（文件系统路由）
+│   │   │   └── index.vue        # 首页（SSR）
+│   │   ├── composables/         # 组合式函数（自动导入）
+│   │   ├── stores/              # Pinia 状态管理
+│   │   ├── components/          # Vue 组件（自动导入）
+│   │   ├── layouts/             # 布局组件
+│   │   ├── plugins/             # 插件（自动加载）
+│   │   ├── server/              # 服务端代码
+│   │   └── nuxt.config.ts       # Nuxt 配置
+│   │
+│   │   # 子包目录（monorepo workspace）
 │   ├── frontend/             # 前端项目（Vue3 + Vite，SPA 模式）
 │   │   ├── public/
 │   │   ├── src/
@@ -101,12 +103,12 @@ Blog/
 5. 初始化数据库：`cd packages/backend && pnpm run init-db`
 6. 启动后端：`pnpm run dev:backend`（端口：3001）
 7. 启动前端（SPA）：`pnpm run dev:frontend`（端口：5173）
-8. 启动 Nuxt SSR（可选）：`cd nuxt-blog && pnpm dev`（端口：3000）
+8. 启动 Nuxt SSR（可选）：`cd packages/nuxt-ssr && pnpm dev`（端口：3000）
 
 **注意**：
 - 前端主应用（Vue3 SPA）和 Nuxt SSR 首页可以独立运行
 - 生产环境通过 Nginx 路由转发：首页走 Nuxt SSR，其他页面走 Vue3 SPA
-- 详细说明请参考 `nuxt-blog/README.md`
+- 详细说明请参考 `packages/nuxt-ssr/README.md`
 
 ### Docker 容器部署
 1. 配置环境变量：复制 `docker/.env.example` 为 `.env` 并修改配置
@@ -125,7 +127,7 @@ Blog/
 
 ## 相关文档
 - **项目启动指南**：参见 `docs/start.md` ⭐
-- **Nuxt SSR 首页说明**：参见 `nuxt-blog/README.md` ⭐
+- **Nuxt SSR 首页说明**：参见 `packages/nuxt-ssr/README.md` ⭐
 - 详细架构设计：参见 `docs/architecture.md`
 - 部署手册：参见 `docs/deployment.md`
 - 开发手册: 参见 `docs/development.md`
@@ -136,7 +138,7 @@ Blog/
 
 ### 前端架构
 - **Vue3 SPA 应用**（`packages/frontend`）：主应用，包含文章详情、分类、搜索、管理后台等页面
-- **Nuxt 3 SSR 应用**（`nuxt-blog`）：独立项目，仅实现首页 SSR，提升首屏性能和 SEO
+- **Nuxt 3 SSR 应用**（`packages/nuxt-ssr`）：独立项目，仅实现首页 SSR，提升首屏性能和 SEO
 
 ### 部署架构
 - 首页（`/`）：由 Nuxt 3 SSR 服务渲染，支持服务端渲染或静态导出

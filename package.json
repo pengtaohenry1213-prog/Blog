@@ -7,40 +7,36 @@
     "packages/*"
   ],
   "scripts": {
-    "dev:frontend": "cd packages/frontend && pnpm run dev",
-    "dev:backend": "cd packages/backend && pnpm run dev",
-    "dev:nuxt": "cd nuxt-blog && pnpm run dev",
+    "dev:frontend": "pnpm run docker:stop:frontend || true && cd packages/frontend && pnpm run dev",
+    "dev:backend": "pnpm run docker:stop:backend || true && cd packages/backend && pnpm run dev",
+    "dev:nuxt": "pnpm run docker:stop:nuxt || true && cd packages/nuxt-ssr && pnpm run dev",
+    "kill:frontend": "kill-port 5173 --force",
+    "kill:backend": "kill-port 3001 --force",
     "dev": "pnpm run docker:up:redis && pnpm run docker:up:mysql && pnpm run docker:stop:frontend && pnpm run docker:stop:backend && pnpm run docker:stop:nuxt && concurrently \"pnpm run dev:frontend\" \"pnpm run dev:backend\" \"pnpm run dev:nuxt\"",
-    "docker:build": "cd docker && docker compose up -d --build",
-
-    "docker:build:fb": "pnpm run docker:build:frontend && pnpm run docker:build:backend",
-
+    "docker:build": " cd docker && docker compose up -d --build",
+    "docker:build:kill": "pnpm run kill:frontend && pnpm run kill:backend",
+    "docker:build:fbn": "pnpm run docker:build:frontend && pnpm run docker:build:backend && pnpm run docker:build:nuxt",
     "build:frontend": "cd packages/frontend && pnpm run build",
     "build:backend": "cd packages/backend && pnpm run build",
     "start:backend": "cd packages/backend && pnpm start",
-    
     "lint:frontend": "cd packages/frontend && pnpm run lint",
     "lint:backend": "cd packages/backend && pnpm run lint",
-    
-    "docker:build:frontend": "cd docker && docker compose build frontend",
-    "docker:build:backend": "cd docker && docker compose build backend",
-    
+    "docker:build:frontend": "cd docker && docker compose up -d --build frontend",
+    "docker:build:backend": "cd docker && docker compose up -d --build backend",
+    "docker:build:nuxt": "cd docker && docker compose up -d --build nuxt",
     "docker:up": "cd docker && docker compose up -d",
     "docker:up:redis": "cd docker && docker compose up -d redis",
     "docker:up:mysql": "cd docker && docker compose up -d mysql",
     "docker:up:nuxt": "cd docker && docker compose up -d nuxt",
     "docker:up:frontend": "cd docker && docker compose up -d frontend",
     "docker:up:backend": "cd docker && docker compose up -d backend",
-    
     "docker:restart": "cd docker && docker compose restart",
     "docker:restart:frontend": "docker compose restart frontend",
     "docker:restart:backend": "cd docker && docker compose restart backend",
-    
     "docker:stop:frontend": "cd docker && docker compose stop frontend",
     "docker:stop:backend": "cd docker && docker compose stop backend",
     "docker:stop:nuxt": "cd docker && docker compose stop nuxt",
     "docker:stop": "cd docker && docker compose stop",
-    
     "docker:logs": "cd docker && docker compose logs -f",
     "docker:logs:frontend": "cd docker && docker compose logs -f frontend",
     "docker:logs:backend": "cd docker && docker compose logs -f backend"
@@ -55,6 +51,7 @@
     "markdown-it": "^14.1.0"
   },
   "devDependencies": {
-    "concurrently": "^9.2.1"
+    "concurrently": "^9.2.1",
+    "kill-port": "^2.0.1"
   }
 }

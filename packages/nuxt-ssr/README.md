@@ -122,7 +122,7 @@
 ## 项目结构
 
 ```
-nuxt-blog/
+packages/nuxt-ssr/
 ├── assets/          # 静态资源（CSS、图片等）
 ├── components/      # Vue 组件（自动导入）
 ├── composables/     # 组合式函数（自动导入）
@@ -300,10 +300,10 @@ const request = axios.create({
 
 #### 1.1 创建目录结构
 
-在 `nuxt-blog/` 目录下创建以下目录结构：
+在 `packages/nuxt-ssr/` 目录下创建以下目录结构：
 
 ```
-nuxt-blog/
+packages/nuxt-ssr/
 ├── .nuxt/          # Nuxt 自动生成（无需手动创建）
 ├── .output/         # 构建输出（无需手动创建）
 ├── assets/          # 静态资源（CSS、图片等）
@@ -329,11 +329,11 @@ nuxt-blog/
 
 #### 1.2 创建 `package.json`
 
-创建 `nuxt-blog/package.json` 文件：
+创建 `packages/nuxt-ssr/package.json` 文件：
 
 ```json
 {
-  "name": "@blog/nuxt-blog",
+  "name": "@blog/nuxt-ssr",
   "version": "1.0.0",
   "type": "module",
   "private": true,
@@ -371,7 +371,7 @@ nuxt-blog/
 
 #### 1.3 创建 `nuxt.config.ts`
 
-创建 `nuxt-blog/nuxt.config.ts` 文件：
+创建 `packages/nuxt-ssr/nuxt.config.ts` 文件：
 
 ```typescript
 // https://nuxt.com/docs/api/configuration/nuxt-config
@@ -504,7 +504,7 @@ export default defineNuxtConfig({
 
 #### 1.4 创建 `app.vue`
 
-创建 `nuxt-blog/app.vue` 根组件：
+创建 `packages/nuxt-ssr/app.vue` 根组件：
 
 ```vue
 <template>
@@ -539,7 +539,7 @@ body {
 
 #### 1.5 创建 `.gitignore`
 
-创建 `nuxt-blog/.gitignore` 文件：
+创建 `packages/nuxt-ssr/.gitignore` 文件：
 
 ```
 # Nuxt 生成的文件
@@ -580,7 +580,7 @@ Thumbs.db
 #### 2.1 安装 Nuxt 核心
 
 ```bash
-cd nuxt-blog
+cd packages/nuxt-ssr
 pnpm add nuxt@^3.12.0
 ```
 
@@ -638,13 +638,13 @@ pnpm add -D prettier@^3.2.4
 #### 3.1 检查依赖安装
 
 ```bash
-cd nuxt-blog
+cd packages/nuxt-ssr
 pnpm install
 ```
 
 #### 3.2 创建首屏页面
 
-创建 `nuxt-blog/pages/index.vue` 作为首屏页面：
+创建 `packages/nuxt-ssr/pages/index.vue` 作为首屏页面：
 
 ```vue
 <template>
