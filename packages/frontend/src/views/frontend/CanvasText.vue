@@ -42,177 +42,53 @@
 
 <script setup>
 import { ref, onMounted, onUnmounted } from 'vue';
-import { debounce } from 'lodash-es'; // 也可自行实现防抖
+import { useCanvasText } from '@/composables/useCanvasText.js'
 
-import { createTextImage } from '@sunny-117/text-image';
+const canvas1 = ref(null);
+const canvas2 = ref(null);
+const canvas3 = ref(null);
 
-const refText = ref(null);
-const refImage = ref(null);
-const refVideo = ref(null);
+const timer1 = ref(null);
 
-// const videoRef = ref(null); // 视频元素引用
-// const videoUrl = ref(null);
-// const isLoading = ref(true);
-// const muteTimer = ref(null);
-
-const initCanvasText = () => {
-  refText.value = createTextImage({
-    // 必填，配置canvas元素，最终作画在其上完成
-    canvas: document.querySelector('canvas'),
-    // 可选，配置作画的文本，默认为'6'
-    replaceText: '6',
-    // 可选，配置作画半径，该值越大越稀疏，默认为 10
-    raduis: 10,
-    // 可选，配置是否灰度化，若开启灰度化则会丢失色彩，默认为 false
-    isGray: false,
-    // 必填，配置作画内容
-    source: {
-      // 必填，配置画什么文本
-      text: 'Text Image',
-      // 选填，配置文本使用的字体，CSS 格式，默认为微软雅黑
-      fontFamily: 'Microsoft YaHei',
-      // 选填，配置文本尺寸，默认为 200
-      fontSize: 200,
-      // 选填，配置图片宽度，默认为图片自身宽度
-      width: 200,
-      // 选填，配置图片高度，默认为图片自身高度
-      height: 30
-    }
-  });
-};
-
-const initCanvasImage = async () => {
-  // 1. 正确导入静态资源（Vite 会处理路径，返回真实 URL）
-  // import imgSrc from '@/assets/1.webp';
-
-  const loadImage = async () => {
-    const module = await import('@/assets/1.webp');
-    return module.default || module;
-  };
-
-  const imgSrc = await loadImage();
-
-  // ========== 2. 绘制图片（修复资源路径） ==========
-  refImage.value = createTextImage({
-    // 必填，配置canvas元素，最终作画在其上完成
-    canvas: document.getElementById('canvas2'),
-    // 可选，配置作画的文本，默认为'6'
-    replaceText: '6',
-    // 可选，配置作画半径，该值越大越稀疏，默认为 10
-    raduis: 5,
-    // 可选，配置是否灰度化，若开启灰度化则会丢失色彩，默认为 false
-    isGray: false,
-    // 必填，配置作画内容
-    source: {
-      // 必填，配置画的图片路径
-      img: imgSrc,
-      // 选填，配置图片宽度，默认为图片自身宽度
-      width: 500,
-      // 选填，配置图片高度，默认为图片自身高度
-      height: 300
-    }
-  });
-};
-
-// 拆分视频初始化逻辑，延迟加载非关键资源
-const initCanvasVideo = async () => {
-  // 视频资源动态导入：需要从模块对象中取出 default 才是实际的 URL 字符串
-
-  // 视频资源动态导入
-  const loadVideo = async () => {
-    const module = await import('@/assets/1.mp4'); // Vite 动态导入静态资源
-    return module.default || module; // 确保拿到字符串 URL，而不是模块对象
-  };
-
-  const videoSrc = await loadVideo();
-
-  // ========== 3. 绘制视频（修复路径 + 异步加载 + canvas 选择器） ==========
-  refVideo.value = createTextImage({
-    canvas: document.getElementById('canvas3'), // 精准选中 canvas3
-    replaceText: '6',
-    raduis: 5,
-    isGray: false,
-    source: {
-      // 这里必须是字符串 URL，否则底层执行 video.src = xxx 时会抛出 “Cannot convert object to primitive value”
-      video: videoSrc,
-      width: 500,
-      height: 400
-    }
-  });
-};
-
-// 添加防抖处理可能的重绘操作
-const debouncedRedraw = debounce(instance => {
-  if (instance && instance.redraw) {
-    // 假设库提供重绘方法
-    instance.redraw();
-  }
-}, 100);
-
-// 监听窗口大小变化时防抖重绘
-const handleResize = () => {
-  debouncedRedraw(refText.value);
-  debouncedRedraw(refImage.value);
-  debouncedRedraw(refVideo.value);
-};
 
 // 在 onMounted 中使用 requestIdleCallback 延迟非关键初始化
 onMounted(async () => {
-  // 1. 优先初始化可视区域内的 canvas1（文字绘制）, 关键内容优先同步初始化
-  initCanvasText();
+
+
+  canvas1.value = document.getElementById('canvas1');
+  canvas2.value = document.getElementById('canvas2');
+  canvas3.value = document.getElementById('canvas3');
+
+  const textHook = useCanvasText({ canvas: canvas1.value, type: 'text' });
+  textHook.init();
+
+  const option2 = { canvas: canvas2.value, type: 'image', source: { loader: () => import('@/assets/1.webp')} };
+  const option3 = { canvas: canvas3.value, type: 'video', source: { loader: () => import('@/assets/1.mp4')} };
 
   // 2. 延迟初始化 canvas2（图片绘制），避免阻塞首屏
-  // setTimeout(initCanvasImage, 500);
-
   // 非关键内容利用空闲时间初始化
   if ('requestIdleCallback' in window) {
-    requestIdleCallback(
-      () => {
-        initCanvasImage();
-      },
-      { timeout: 1000 }
-    );
+    requestIdleCallback(() => useCanvasText(option2)?.init(), { timeout: 1000 });
   } else {
-    setTimeout(initCanvasImage, 500);
+    timer1.value = setTimeout(() => useCanvasText(option2).init(), 500);
   }
 
   // 3. 视频 canvas 按需加载（如用户滚动到可视区域时）, 视频画布继续使用交叉观察器
-  const observer = new IntersectionObserver(entries => {
-    if (entries[0].isIntersecting) {
-      initCanvasVideo();
-      observer.disconnect(); // 只执行一次
+  const videoObserver = new IntersectionObserver(entries => {
+    if (entries[0].isIntersecting && canvas3) {
+      useCanvasText(option3)?.init();
+      videoObserver.disconnect(); // 只执行一次
     }
   });
-  observer.observe(document.getElementById('canvas3') || document.createElement('div'));
+  videoObserver.observe(canvas3.value || document.createElement('div'));
 
-  window.addEventListener('resize', handleResize);
 });
 
 onUnmounted(() => {
-  window.removeEventListener('resize', handleResize);
-  debouncedRedraw.cancel(); // 清理防抖计时器
-
-  // 销毁 canvas 实例
-  [refText, refImage, refVideo].forEach(ref => {
-    if (ref.value) {
-      const canvas = ref.value.canvas;
-      if (canvas) {
-        const ctx = canvas.getContext('2d');
-        if (ctx) {
-          // 清除画布内容
-          ctx.clearRect(0, 0, canvas.width, canvas.height);
-        }
-      }
-      ref.value = null;
-    }
-  });
-
-  // 清理视频资源
-  // if (videoRef.value) {
-  //   videoRef.value.pause();
-  //   videoRef.value.srcObject = null; // 彻底释放视频源
-  //   videoRef.value.remove();
-  // }
+  if(timer1.value) {
+    clearTimeout(timer1.value);
+    timer1.value = null;
+  }
 });
 
 // 优化后的 CanvasText.vue 代码
