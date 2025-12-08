@@ -18,6 +18,9 @@
 #      |     └── package.json
 #      │   
 #      ├── pnpm-workspace.yaml       # pnpm workspaces 配置
+#      |     packages:
+#      |       - 'packages/*'
+#      |       - 'nuxt-blog'
 #      ├── package.json              # 根项目配置（workspace 管理）
 #      └── pnpm-lock.yaml
 #    
@@ -40,6 +43,7 @@ FROM node:lts-alpine
 WORKDIR /app
 
 # 安装系统依赖: 安装 curl 工具，用于健康检查, --no-cache 参数：不缓存包索引，减小镜像体积
+# 在 Alpine 镜像中(node:lts-alpine) 安装 curl 工具.
 RUN apk add --no-cache curl
 
 # 安装包管理器: 全局安装 pnpm（Performant Node Package Manager）, pnpm 比 npm/yarn 更快，磁盘占用更少，支持 workspace 功能

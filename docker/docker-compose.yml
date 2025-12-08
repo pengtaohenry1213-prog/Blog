@@ -3,21 +3,21 @@
 services:
   # MySQL 数据库
   mysql:
-    image: mysql:latest
+    image: mysql:latest # 使用官方最新版 MySQL
     container_name: blog-mysql
     environment:
-      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:-root123}
-      MYSQL_DATABASE: ${DB_NAME:-blog_db}
-      MYSQL_USER: ${DB_USER:-blog_user}
-      MYSQL_PASSWORD: ${DB_PASSWORD:-root123}
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:-root123}  # root 密码（默认 root123，可用 .env 覆盖）
+      MYSQL_DATABASE: ${DB_NAME:-blog_db}           # 初始化数据库名
+      MYSQL_USER: ${DB_USER:-blog_user}             # 业务账号
+      MYSQL_PASSWORD: ${DB_PASSWORD:-root123}       # 业务账号密码
     ports:
-      - "${DB_PORT:-3306}:3306"
+      - "${DB_PORT:-3306}:3306"              # 宿主机:容器
     volumes:
-      - mysql_data:/var/lib/mysql
-      - ./scripts/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+      - mysql_data:/var/lib/mysql            # 数据持久化卷
+      - ./scripts/init.sql:/docker-entrypoint-initdb.d/init.sql:ro  # 首次启动执行初始化 SQL
     networks:
       - blog-network
-    healthcheck:
+    healthcheck: # 健康检查，保证后端依赖前数据库就绪
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
       interval: 10s
       timeout: 5s
@@ -25,16 +25,18 @@ services:
     restart: unless-stopped
 
   # Redis 缓存
+  # AOF（Append Only File）是 Redis 提供的持久化机制之一（另一种是 RDB）
+  # 它通过记录 Redis 服务器接收到的所有写命令（如 SET、HSET、LPUSH 等），以文本协议的形式追加到 AOF 文件中，实现数据持久化。
   redis:
     image: redis:latest
     container_name: blog-redis
     ports:
       - "${REDIS_PORT:-6379}:6379"
     volumes:
-      - redis_data:/data
+      - redis_data:/data                     # AOF 持久化
     networks:
       - blog-network
-    command: redis-server --appendonly yes
+    command: redis-server --appendonly yes   # 开启 AOF
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 10s
