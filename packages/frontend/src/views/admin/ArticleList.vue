@@ -40,7 +40,7 @@
         layout="total, sizes, prev, pager, next, jumper"
         @size-change="handleSizeChange"
         @current-change="handlePageChange"
-        style="margin-top: 20px; justify-content: flex-end;"
+        class="el-pagination"
       />
     </el-card>
   </div>
@@ -210,6 +210,11 @@ onBeforeUnmount(() => {
 <style scoped>
 .article-list {
   padding: 20px;
+}
+
+
+.el-pagination {
+  margin-top: 20px; justify-content: flex-end;
 }
 
 .header {

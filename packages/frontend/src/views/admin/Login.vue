@@ -22,7 +22,7 @@
           />
         </el-form-item>
         <el-form-item>
-          <el-button type="primary" :loading="loading" @click="handleLogin" style="width: 100%">
+          <el-button type="primary" :loading="loading" @click="handleLogin" class="w-100">
             登录
           </el-button>
         </el-form-item>
@@ -85,6 +85,10 @@ async function handleLogin() {
 
 .login-card {
   width: 400px;
+}
+
+.w-100 {
+  width: 100%;
 }
 </style>
 

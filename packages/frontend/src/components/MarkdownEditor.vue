@@ -5,6 +5,7 @@
 import { ref, onMounted, onBeforeUnmount, watch, defineProps, defineEmits, nextTick } from 'vue'
 import Vditor from 'vditor'
 import 'vditor/dist/index.css'
+
 import { useTabVisibility } from '@/composables/useTabVisibility'
 
 const editorRef = ref(null)
@@ -23,7 +24,7 @@ let workerPort = null
 let analysisTimer = null // 防抖定时器
 let isWorkerInitialized = false // 标记 Worker 是否已初始化
 
-console.error('MarkdownEditor.vue -> useTabVisibility');
+console.log('MarkdownEditor.vue -> useTabVisibility');
 
 // 页签可见性：当标签页不活跃时暂停内容分析（防抖 500ms）
 const { isActive } = useTabVisibility({
@@ -363,7 +364,8 @@ onMounted(async () => {
         }
       }
     ],
-    // lang: 'zh-CN',
+    // 明确设置为空字符串，完全禁用 CDN 加载（包括语言包）
+    // cdn: '',
     customWysiwygToolbar: (toolbar) => {
       return toolbar;
     },

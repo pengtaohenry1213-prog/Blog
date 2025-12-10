@@ -62,7 +62,14 @@ function initChart() {
     chartInstance = null
   }
 
-  chartInstance = echarts.init(chartRef.value, props.theme || undefined)
+  chartInstance = echarts.init(
+    chartRef.value, 
+    props.theme || undefined,
+    // {   
+    //   renderer: 'canvas', // 强制使用Canvas渲染（默认auto，会优先WebGL）
+    //   useDirtyRect: false, // 可选：禁用脏矩形优化（部分版本依赖eval）
+    // }
+  )
   if (props.options) {
     chartInstance.setOption(props.options, true)
   }

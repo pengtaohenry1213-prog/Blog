@@ -106,8 +106,12 @@ const app = express();
 const PORT = config.server.port;
 
 // 中间件初始化和装配
-app.use(helmet()); // 安全中间件 - helmet: 设置各种 HTTP 头以增强安全性
+app.use(helmet({
+  contentSecurityPolicy: false, // 禁用CSP, 由前端 vite-plugin-csp 和 nginx 处理
+})); // 安全中间件 - helmet: 设置各种 HTTP 头以增强安全性
+
 app.use(cors(config.cors)); // 安全中间件 - cors: 跨域资源共享 (CORS)
+
 app.use(express.json()); // 解析请求体(JSON)
 app.use(express.urlencoded({ extended: true })); // 解析请求体(URL 编码)
 app.use(requestLogger); // 请求日志（requestLogger）

@@ -1,6 +1,5 @@
 import { defineConfig } from 'vite';
 import vue from '@vitejs/plugin-vue';
-import csp from 'vite-plugin-csp'
 import { fileURLToPath, URL } from 'node:url';
 
 // 引入rollup-plugin-visualizer, 实现打包分析
@@ -14,34 +13,6 @@ import { ElementPlusResolver } from 'unplugin-vue-components/resolvers';
 export default defineConfig({
   plugins: [
     vue(),
-    csp({
-      policies: {
-        'default-src': ["'self'"],
-        // 移除 'unsafe-inline'，使用哈希验证 内联脚本
-        // 'script-src': ["'self'", "'unsafe-inline'"],
-        // 'script-src': ["'self'", "'strict-dynamic'"],
-        'script-src': ["'self'", "'strict-dynamic'", 'https://unpkg.com'],
-
-        // 移除 'unsafe-inline'，使用哈希验证 内联样式
-        // 'style-src': ["'self'", "'unsafe-inline'"],
-        'style-src': ["'self'", "'strict-dynamic'"],
-
-        'img-src': ["'self'", 'data:'],
-        'media-src': ["'self'"],
-        'object-src': ["'none'"],
-        'frame-src': ["'none'"],
-      },
-      // 启用哈希计算（关键配置）
-      hashEnabled: {
-        'script-src': true,  // 为内联脚本生成哈希
-        'style-src': true    // 为内联样式生成哈希
-      },
-      // 可选：如果需要 nonce 方案，启用此处
-      nonceEnabled: {
-        'script-src': true,
-        'style-src': true
-      }
-    }),
     // 新增：自动导入 API（如 ElMessage）
     AutoImport({
       resolvers: [ElementPlusResolver()],

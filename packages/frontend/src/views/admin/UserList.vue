@@ -33,8 +33,8 @@
         </el-table-column>
         <el-table-column label="操作" width="180" fixed="right">
           <template #default="{ row }">
-            <el-button type="primary" size="small" @click="handleEdit(row)">编辑</el-button>
-            <el-button type="danger" size="small" @click="handleDelete(row.id)">删除</el-button>
+            <el-button type="primary" size="small" @click="handleEdit(row)"> 编辑 </el-button>
+            <el-button type="danger" size="small" @click="handleDelete(row.id)"> 删除 </el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -42,12 +42,12 @@
       <el-pagination
         v-model:current-page="pagination.page"
         v-model:page-size="pagination.pageSize"
+        class="el-pagination"
         :total="pagination.total"
         :page-sizes="[10, 20, 50]"
         layout="total, sizes, prev, pager, next, jumper"
         @size-change="handleSizeChange"
         @current-change="handlePageChange"
-        style="margin-top: 20px; justify-content: flex-end;"
       />
     </el-card>
 
@@ -87,7 +87,7 @@
 <script setup>
 import { ref, reactive, computed } from 'vue';
 import { userApi } from '@/api';
-// import { ElMessage, ElMessageBox } from 'element-plus'; // 这些 import 可以移除（插件会自动处理）
+import { ElMessage, ElMessageBox } from 'element-plus'; // 这些 import 可以移除（插件会自动处理）
 
 const userList = ref([]);
 const loading = ref(false);
@@ -111,7 +111,7 @@ const userForm = reactive({
 });
 
 const isEdit = computed(() => !!currentEditId.value);
-const dialogTitle = computed(() => isEdit.value ? '编辑用户' : '新建用户');
+const dialogTitle = computed(() => (isEdit.value ? '编辑用户' : '新建用户'));
 
 const userRules = {
   username: [{ required: true, message: '请输入用户名', trigger: 'blur' }],
@@ -165,7 +165,7 @@ function handleEdit(user) {
 async function handleSubmit() {
   if (!userFormRef.value) return;
 
-  await userFormRef.value.validate(async (valid) => {
+  await userFormRef.value.validate(async valid => {
     if (valid) {
       submitLoading.value = true;
       try {
@@ -197,7 +197,7 @@ async function handleDelete(id) {
     await ElMessageBox.confirm('确定要删除这个用户吗？', '提示', {
       type: 'warning'
     });
-    
+
     await userApi.delete(id);
     ElMessage.success('删除成功');
     loadUsers();
@@ -232,10 +232,14 @@ loadUsers();
   padding: 20px;
 }
 
+.el-pagination {
+  margin-top: 20px;
+  justify-content: flex-end;
+}
+
 .header {
   display: flex;
   justify-content: space-between;
   align-items: center;
 }
 </style>
-

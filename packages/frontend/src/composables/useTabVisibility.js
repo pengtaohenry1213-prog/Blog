@@ -92,7 +92,7 @@ export function useTabVisibility(options = {}) {
   const initialVisibility = hasDocument ? document.visibilityState === 'visible' : true;
   const isActive = ref(initialVisibility);
   
-  console.warn('document.visibsilityState: ', initialVisibility, ', isActive = ', isActive.value)
+  console.log('[useTabVisibility.js] document.visibsilityState: ', initialVisibility, ', isActive = ', isActive.value)
 
   // 默认使用 isCurrdentTabActive，保证多开同一页面时只统计一个页签
   // 全局只有“当前被判定为 isCurrentTabActive 的页签”会继续轮询，其它页签（即使也可见）会停掉轮询。
@@ -128,7 +128,7 @@ export function useTabVisibility(options = {}) {
       };
       // 更新 localStorage
       localStorage.setItem(storageKey, JSON.stringify(state));
-      console.error(`localStorage(${storageKey}).isActive = ${isActive.value}, tabId = ${tabId.value}`)
+      // console.error(`localStorage(${storageKey}).isActive = ${isActive.value}, tabId = ${tabId.value}`)
 
       
     } catch (error) {
@@ -258,7 +258,7 @@ export function useTabVisibility(options = {}) {
       // 状态是动态的：当另一个页签变为可见时，它会成为"最活跃的"，
       // 之前活跃的页签的 isCurrentTabActive 会变为 false
       isCurrentTabActive.value = false;
-      console.warn('[checkCurrentTabActive] 状态是动态的：当另一个页签变为可见时，它会成为"最活跃的"，之前活跃的页签的 isCurrentTabActive 会变为 false! allTabsState.isActive = ', allTabsState.isActive, ', allTabsState.tabId = ', allTabsState.tabId, ', tabId.value = ', tabId.value);
+      // console.warn('[checkCurrentTabActive] 状态是动态的：当另一个页签变为可见时，它会成为"最活跃的"，之前活跃的页签的 isCurrentTabActive 会变为 false! allTabsState.isActive = ', allTabsState.isActive, ', allTabsState.tabId = ', allTabsState.tabId, ', tabId.value = ', tabId.value);
     } else {
       // 其他页签不活跃（isActive=false），则当前页签可以成为最活跃的
       isCurrentTabActive.value = isActive.value;
@@ -375,7 +375,7 @@ export function useTabVisibility(options = {}) {
 
     // 组合式里
     const { componentName = 'unknown' } = options;
-    console.error(`组件 ${componentName} 挂载时初始化 in init()`);
+    console.log(`组件 ${componentName} 挂载时初始化 in init()`);
 
     // 缓存事件处理函数的引用，以便后续清理
     visibilityHandler = handleVisibilityChange;
@@ -456,7 +456,7 @@ export function useTabVisibility(options = {}) {
           const state = JSON.parse(stateStr);
           if (state.tabId === tabId.value) {
             localStorage.removeItem(storageKey);
-            console.error('3. ----- localStorage.removeItem: ', storageKey);
+            console.log('3. ----- localStorage.removeItem: ', storageKey);
           }
         }
       } catch (error) {

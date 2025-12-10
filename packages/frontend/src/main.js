@@ -6,7 +6,8 @@ import { createPinia } from 'pinia';
 
 // 优化：按需导入图标，而不是全量导入
 // 移除：import * as ElementPlusIconsVue from '@element-plus/icons-vue';
-import zhCn from 'element-plus/dist/locale/zh-cn.mjs';
+// import zhCn from 'element-plus/dist/locale/zh-cn.mjs';
+
 import App from './App.vue';
 import router from './router';
 
