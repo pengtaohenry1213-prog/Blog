@@ -7,6 +7,10 @@
 3. **数据层**：MySQL主数据库 + Redis缓存
 4. **部署层**：Docker容器 + Nginx反向代理 + HTTPS
 
+> 运行形态补充  
+> - 开发：docker-compose 本地编排（前端 DevServer、后端 API、MySQL、Redis、Nginx 反代）  
+> - 生产：多阶段镜像（Node 构建→精简运行），Nginx 提供静态与反代，MySQL/Redis 独立持久卷
+
 ## 二、目录结构设计（monorepo）
 ```plaintext
 blog-project/
@@ -48,7 +52,7 @@ blog-project/
   - 后台：登录/注销、文章管理（CRUD）、用户管理（权限控制）、数据统计
 - **构建流程**：
   - 开发环境：Vite热更新
-  - 生产环境：打包为静态资源，通过Nginx部署
+  - 生产环境：打包为静态资源，通过Nginx部署；静态资源带内容哈希并配合 `immutable`，HTML 设 `no-store`
 - **前端代码规范**：
   - 集成ESLint + Prettier强制代码风格统一，配置Husky实现提交前代码校验（pre-commit钩子）。
 
@@ -60,6 +64,7 @@ blog-project/
   - 服务层：业务逻辑封装
   - 数据访问层：MySQL交互、Redis缓存操作
   - 中间件：身份验证、权限校验、错误处理、请求日志
+  - 健康检查：`/health` 只做轻量探活，不依赖外部资源，供容器/负载均衡存活检测
   - 后端模块化拆分：
     在backend目录下新增modules子目录，按业务域拆分模块（如articleModule、userModule、authModule），每个模块包含独立的路由、控制器和服务，示例结构：
     ```plaintext
@@ -100,6 +105,13 @@ blog-project/
   - 定义 4 个服务：frontend、backend、mysql、redis
   - 配置网络桥接，实现容器间通信
   - 挂载数据卷，持久化 MySQL 和 Redis 数据
+- **运行时参数**：
+  - 环境变量注入（DB/Redis、JWT_SECRET、CORS 白名单等），仓库不落敏感信息
+  - Nginx：Gzip、静态长缓存、API 代理；生产开启 HTTPS/HSTS，必要时 `limit_req`/`limit_conn`
+  - Backend：合理 HTTP 超时（connect/read/send）、请求体上限、日志采样；SIGTERM 优雅关停
+- **安全网关**：
+  - TLS 强制（生产），CSP/安全头，前端同源 + 后端 CSRF 防护（或只接受 JSON + token）
+  - 接口速率限制（IP/用户粒度），登录/敏感接口单独限流；管理端路由必需鉴权
 - **Nginx 配置**：
   - 反向代理：将 API 请求转发至后端服务
   - 静态资源：直接提供前端打包文件
@@ -122,6 +134,22 @@ blog-project/
 5. **Nginx 增强配置**
   - 启用 Gzip 压缩：压缩前端静态资源和 API 响应数据，减少传输体积。
   - 配置缓存策略：对前端 JS/CSS/图片等静态资源设置 `Cache-Control` 缓存头，长缓存静态资源。
+
+6. **观测与告警**
+  - 日志：结构化 JSON，traceId 贯穿前后端/网关；集中收集（ELK/Loki）
+  - 指标：延迟/错误率/QPS、Redis/DB 连接池、Nginx upstream 状态；暴露 Prometheus 指标或接入 APM
+  - 链路追踪：可选 Zipkin/Jaeger/OpenTelemetry，关键接口打 span
+  - 告警：阈值 + 变化率双触发，区分等级与值班策略
+
+7. **数据可靠性**
+  - 备份：MySQL 定时全量 + binlog 增量；本地与异地冗余；保留策略如 7/30/180
+  - 恢复演练：定期将备份恢复到预发布验证可用性
+  - Redis：视需求开启 AOF/快照；避免大 key/热 key，必要时拆分命名空间
+
+8. **CI/CD 建议**
+  - CI：lint + test + typecheck + 构建；镜像构建与漏洞扫描
+  - CD：预发布冒烟（接口/页面），灰度或分阶段放量；回滚为上一镜像 + 数据备份点
+  - 配置管理：.env 模板 + 密钥管理服务，不提交真实密钥
 
 ## 五、目录结构补充调整
 基于上述补充，调整后的目录结构新增关键节点：

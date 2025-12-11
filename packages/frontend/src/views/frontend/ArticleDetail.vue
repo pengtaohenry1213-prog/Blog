@@ -4,13 +4,13 @@
       <template #header>
         <h1>{{ article.title }}</h1>
         <div class="article-meta">
-          <span>作者2：{{ article.author?.username }}</span>
+          <span>作者：{{ article.author?.username }}</span>
           <span>发布时间：{{ formatDate(article.publish_time) }}</span>
           <span>阅读量：{{ article.read_count }}</span>
           <el-tag v-if="article.category" size="small">{{ article.category.name }}</el-tag>
         </div>
       </template>
-      <!-- <div class="article-content" v-html="article.content"></div> -->
+
       <div class="article-content">
         <MarkdownEditor 
           v-model="article.content" 
@@ -27,7 +27,7 @@
 import { ref, onMounted, onUnmounted } from 'vue';
 import { useRoute } from 'vue-router';
 import { articleApi } from '@/api';
-// import { ElMessage } from 'element-plus'; // 这些 import 可以移除（插件会自动处理）
+import { ElMessage } from 'element-plus'; // 这些 import 可以移除（插件会自动处理）
 
 // import MarkdownEditor from '@/components/MarkdownEditor.vue'
 import { defineAsyncComponent } from 'vue';

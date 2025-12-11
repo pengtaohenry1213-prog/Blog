@@ -46,5 +46,10 @@ app.use(router);
 // 移除：app.use(ElementPlus, { locale: zhCn });
 // 如果需要全局配置 locale，可以在组件使用时单独配置
 
-app.mount('#app');
+// 等待路由就绪后再挂载应用, 发现问题: 应用还没等路由准备好就 mount，初次导航被打断，界面表现成刷新/闪一下。
+router.isReady().then(() => {
+  app.mount('#app');
+});
+
+// app.mount('#app');
 

@@ -67,3 +67,86 @@ AutoImport({
 }),
 ```
 
+## 优化 Vite 的按需引入 + 打包
+```
+import AutoImport from 'unplugin-auto-import/vite';
+import Components from 'unplugin-vue-components/vite';
+import { ElementPlusResolver } from 'unplugin-vue-components/resolvers';
+```
+
+```
+AutoImport({
+  resolvers: [ElementPlusResolver()],
+  // 生成 ESLint 配置文件，解决 ESLint 报错
+  eslintrc: {
+    enabled: true, // 启用 ESLint 配置生成
+    filepath: './.eslintrc-auto-import.json', // 生成的文件路径
+    globalsPropValue: true, // 设置为 true 表示这些是全局变量
+  },
+}),
+```
+
+```
+Components({
+  resolvers: [ElementPlusResolver()],
+}),
+```
+
+## 在 MarkdownEditor 组件中使用 MessageChannel 和 Worker
+```
+const { start, stop, isRunning } = useAutoPolling(async () => {
+  await loadDashboardData()
+}, { interval: 30000, immediate: false })
+```
+
+```
+const { start, stop, isRunning } = useAutoPolling(async () => {
+  await loadDashboardData()
+}, { interval: 30000, immediate: false })
+```
+
+## 在 ArticleForm 组件中使用 MessageChannel 和 Worker
+## 在 ArticleDetail 组件中使用 MessageChannel 和 Worker
+详见: messageChannel-analysis.md 和 messageChannel-implementation.md
+
+## Admin 后台管理功能 添加dashboard页面
+1. 添加 dashboard 页面
+2. 添加 dashboard 页面组件
+
+## Nuxt.js 项目迁移到 Vite.js 项目
+1. 首屏SSR渲染
+2. 其他页面SPR(vue3+vite)渲染
+3. nginx处理路由, 部署架构:
+   - 首页（`/`）：由 Nuxt 3 SSR 服务渲染，支持服务端渲染或静态导出
+   - 其他页面（`/article/**`、`/category/**`、`/admin/**` 等）：由 Vue3 SPA 应用处理
+   - 通过 Nginx 路由转发实现无缝切换；生产默认端口：前端 5173、后端 3001、Nuxt 3000（由 Nginx 统一暴露 80/443）
+
+## 使用hooks-useTabVisibility.js 功能处理 页签活跃时自动开始轮询，非活跃时自动暂停
+1. 添加 hooks-useTabVisibility.js 文件
+2. 添加 useTabVisibility.js 文件
+3. 详见: useTabVisibility.md
+
+## packages.json加入常用命令集合
+
+## nuxt-blog项目迁移到 packages 目录下, 符合 monorepo 单体仓库管理
+1. 迁移 nuxt-blog 项目到 packages 目录下
+2. nginx名称改为 nuxt-ssr
+
+## 添加hooks-composables/useCanvas.js 功能处理 画布绘制、添加components/Canvas.vue组件、添加pages/canvas.vue页面
+1. 在 hooks-composables/useCanvas.js 文件中添加 useCanvas 函数
+2. 在 components/Canvas.vue 组件中添加 Canvas 组件
+3. 在 pages/canvas.vue 页面中添加 Canvas 页面
+
+## 添加hooks-composables/useDebounce.js 功能处理 防抖
+1. 在 hooks-composables/useDebounce.js 文件中添加 useDebounce 函数
+2. 在 ArticleForm 组件中使用 useDebounce 函数
+
+## 添加hooks-composables/useErrorHandler.js 功能处理 错误处理
+1. 在 hooks-composables/useErrorHandler.js 文件中添加 useErrorHandler 函数
+2. 在 useDebounce 功能、useCanvas 功能中使用 useErrorHandler 函数
+
+## vite中的CSP配置删除, 迁移到 nginx中配置
+1. 删除 vite.config.js 中的 CSP 配置, pnpm remove vite-plugin-csp 
+2. 在 nginx.conf 中添加 CSP 配置
+
+

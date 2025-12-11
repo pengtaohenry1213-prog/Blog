@@ -1,4 +1,5 @@
 <template>
+  <!-- JSON-LD 结构化数据 - 使用 Nuxt 的 useHead 注入到 head -->
   <div class="home">
     <el-row :gutter="20">
       <el-col :span="18">
@@ -58,6 +59,18 @@ console.warn('[nuxt-ssr/pages/index.vue 这里是SSR Nuxt首页] index.vue');
 
 import { ref, computed, watchEffect } from 'vue';
 import { useArticleApi } from '~/composables/useArticleApi';
+
+console.log('-------------------------> pages/index.vue');
+
+// SEO 配置：从运行时配置读取（支持环境变量，本地开发默认 localhost:3000）
+
+// 在 Nuxt 3 中，useRuntimeConfig() 用来 获取运行时配置（runtime config），这些配置可以在 服务器端或客户端 使用，但它们的可见范围不同。
+// nuxt.config.ts: defineNuxtConfig 里有定义 runtimeConfig
+const config = useRuntimeConfig();
+
+const siteBase = config.public.siteBase;
+const siteName = config.public.siteName;
+const defaultOgImage = `${siteBase}/og-default.png`;
 
 // 显式指定使用 default 布局
 // definePageMeta({
@@ -120,6 +133,132 @@ const articleList = computed(() => articlesData.value?.list || []);
 
 // 计算属性：热门文章
 const hotArticles = computed(() => hotArticlesData.value || []);
+
+// SEO：根据列表动态生成首页 head、OG、JSON-LD（占位域名，待替换为生产域名）
+const pageUrl = computed(() => `${siteBase}/`);
+const metaDescription = computed(() => {
+  const topTitles = articleList.value.slice(0, 3).map((a) => a.title).filter(Boolean);
+  return topTitles.length
+    ? `精选文章：${topTitles.join(' / ')}`
+    : '技术文章、学习笔记与分享。';
+});
+
+// 计算属性：JSON-LD 结构化数据（用于 Head 组件）
+const jsonLdScript = computed(() => {
+  const ogImage = articleList.value[0]?.cover || defaultOgImage;
+  
+  // 构建 JSON-LD 结构化数据
+  const blogPosts = articleList.value.slice(0, 5)
+    .filter((a) => a.title)
+    .map((a) => {
+      const post = {
+        '@type': 'BlogPosting',
+        headline: a.title,
+        datePublished: a.publish_time,
+        dateModified: a.update_time || a.publish_time,
+        url: `${siteBase}/article/${a.id}`,
+        image: a.cover || defaultOgImage,
+        mainEntityOfPage: {
+          '@type': 'WebPage',
+          '@id': `${siteBase}/article/${a.id}`,
+        },
+      };
+      if (a.author?.username) {
+        post.author = {
+          '@type': 'Person',
+          name: a.author.username,
+        };
+      }
+      return post;
+    });
+  
+  const ldBlog = {
+    '@context': 'https://schema.org',
+    '@type': 'Blog',
+    name: siteName,
+    url: pageUrl.value,
+    description: metaDescription.value,
+    publisher: {
+      '@type': 'Organization',
+      name: siteName,
+    },
+    blogPost: blogPosts,
+  };
+  
+  return JSON.stringify(ldBlog);
+});
+
+// 新增 useHead 动态输出 title/description、OG/Twitter、canonical，以及 Blog/BlogPosting JSON-LD（占位域名 https://example.com，默认 OG 图 og-default.png）。
+// 注意：使用 useHead 的 script 属性是更安全的方式，避免了 v-html 的 XSS 风险
+useHead(() => {
+  const ogImage = articleList.value[0]?.cover || defaultOgImage;
+  
+  // 构建 JSON-LD 结构化数据
+  const blogPosts = articleList.value.slice(0, 5)
+    .filter((a) => a.title) // 过滤掉没有标题的文章
+    .map((a) => {
+      const post = {
+        '@type': 'BlogPosting',
+        headline: a.title,
+        datePublished: a.publish_time,
+        dateModified: a.update_time || a.publish_time,
+        url: `${siteBase}/article/${a.id}`,
+        image: a.cover || defaultOgImage,
+        mainEntityOfPage: {
+          '@type': 'WebPage',
+          '@id': `${siteBase}/article/${a.id}`,
+        },
+      };
+      // 只有当作者存在时才添加 author 字段
+      if (a.author?.username) {
+        post.author = {
+          '@type': 'Person',
+          name: a.author.username,
+        };
+      }
+      return post;
+    });
+  
+  const ldBlog = {
+    '@context': 'https://schema.org',
+    '@type': 'Blog',
+    name: siteName,
+    url: pageUrl.value,
+    description: metaDescription.value,
+    publisher: {
+      '@type': 'Organization',
+      name: siteName,
+    },
+    blogPost: blogPosts,
+  };
+  
+  return {
+    title: `${siteName} - 首页`,
+    meta: [
+      { name: 'description', content: metaDescription.value },
+      { property: 'og:type', content: 'website' },
+      { property: 'og:title', content: `${siteName} - 首页` },
+      { property: 'og:description', content: metaDescription.value },
+      { property: 'og:url', content: pageUrl.value },
+      { property: 'og:image', content: ogImage },
+      { name: 'twitter:card', content: 'summary_large_image' },
+      { name: 'twitter:title', content: `${siteName} - 首页` },
+      { name: 'twitter:description', content: metaDescription.value },
+      { name: 'twitter:image', content: ogImage },
+    ],
+    link: [
+      { rel: 'canonical', href: pageUrl.value },
+      // { rel: 'alternate', hreflang: 'en', href: `${pageUrl.value}?lang=en` },
+    ],
+    script: [
+      {
+        type: 'application/ld+json',
+        innerHTML: JSON.stringify(ldBlog),
+        key: 'blog-schema',
+      },
+    ],
+  };
+});
 
 // 更新分页总数
 watchEffect(() => {

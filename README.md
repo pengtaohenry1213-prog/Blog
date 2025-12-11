@@ -3,7 +3,7 @@
 ## 项目简介
 一个基于全栈技术栈的个人博客系统，包含前台展示与后台管理功能，采用前后端分离架构，通过Docker容器化部署，支持线上环境稳定运行。
 
-**性能优化**：首页采用 Nuxt 3 SSR（服务端渲染）提升首屏加载速度和 SEO 效果，其他页面保持 Vue3 SPA 模式，兼顾性能与开发效率。
+**性能优化 / SEO**：首页采用 Nuxt 3 SSR（服务端渲染）提升首屏和可索引性，其他页面保持 Vue3 SPA 模式；SEO 细则（useHead 元标签、OG/JSON-LD、sitemap/robots）见 `docs/seo.md`。前端 Vite 侧启用 `optimizeDeps` 预构建（include：`vue`/`vue-router`/`pinia`/`element-plus`，exclude：`@element-plus/icons-vue`），减少冷启动等待且保留图标按需加载。
 
 ## 核心技术栈
 - **前端**：
@@ -98,8 +98,10 @@ Blog/
 ### 开发环境快速启动
 1. 克隆仓库：`git clone <仓库地址>`
 2. 安装依赖：`pnpm install`
-3. 配置环境变量：复制 `packages/backend/.env.example` 为 `.env` 并修改配置
-4. 启动 MySQL 和 Redis：`cd docker && docker-compose up -d mysql redis`
+3. 配置环境变量：在 `packages/backend` 创建 `.env`（可参考该目录 README 的示例）：
+   - 基础变量：`PORT=3001`、`DB_HOST`/`DB_PORT`/`DB_USER`/`DB_PASSWORD`、`REDIS_HOST`/`REDIS_PORT`、`JWT_SECRET`
+   - 允许跨域：`CORS_ORIGIN=http://localhost:5173`
+4. 启动 MySQL 和 Redis：`cd docker && docker compose up -d mysql redis`
 5. 初始化数据库：`cd packages/backend && pnpm run init-db`
 6. 启动后端：`pnpm run dev:backend`（端口：3001）
 7. 启动前端（SPA）：`pnpm run dev:frontend`（端口：5173）
@@ -109,6 +111,13 @@ Blog/
 - 前端主应用（Vue3 SPA）和 Nuxt SSR 首页可以独立运行
 - 生产环境通过 Nginx 路由转发：首页走 Nuxt SSR，其他页面走 Vue3 SPA
 - 详细说明请参考 `packages/nuxt-ssr/README.md`
+
+### 常用命令速查（根目录）
+- 全栈一键开发：`pnpm dev`（自动启动 MySQL/Redis 容器，并并行启动前端/后端/Nuxt）
+- 单独启动：`pnpm dev:frontend` | `pnpm dev:backend` | `pnpm dev:nuxt`
+- 构建产物：`pnpm build:frontend` | `pnpm build:backend`
+- Docker 编排：`cd docker && docker compose up -d`（或单独 `docker compose up -d frontend/backend/nuxt`）
+- 查看容器日志：`cd docker && docker compose logs -f <service>`
 
 ### Docker 容器部署
 1. 配置环境变量：复制 `docker/.env.example` 为 `.env` 并修改配置
@@ -132,6 +141,7 @@ Blog/
 - 部署手册：参见 `docs/deployment.md`
 - 开发手册: 参见 `docs/development.md`
 - 性能与安全优化文档：参见 `docs/optimization.md`
+- SEO 优化说明：参见 `docs/seo.md`
 - 开发工作流：参见 `docs/workflow.md`
 
 ## 架构说明
@@ -143,4 +153,4 @@ Blog/
 ### 部署架构
 - 首页（`/`）：由 Nuxt 3 SSR 服务渲染，支持服务端渲染或静态导出
 - 其他页面（`/article/**`、`/category/**`、`/admin/**` 等）：由 Vue3 SPA 应用处理
-- 通过 Nginx 路由转发实现无缝切换
+- 通过 Nginx 路由转发实现无缝切换；生产默认端口：前端 5173、后端 3001、Nuxt 3000（由 Nginx 统一暴露 80/443）

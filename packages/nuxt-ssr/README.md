@@ -190,6 +190,10 @@ modules: [
 # API 基础地址（客户端可访问，需要 NUXT_PUBLIC_ 前缀）
 NUXT_PUBLIC_API_BASE_URL=http://localhost:3001/api
 
+# SEO 配置（客户端可访问，本地开发默认使用 localhost:3000）
+NUXT_PUBLIC_SITE_BASE=http://localhost:3000
+NUXT_PUBLIC_SITE_NAME=个人博客
+
 # 服务端专用配置（不需要 NUXT_PUBLIC_ 前缀）
 # NUXT_API_SECRET=your_secret_key
 ```
@@ -197,6 +201,9 @@ NUXT_PUBLIC_API_BASE_URL=http://localhost:3001/api
 **注意事项：**
 - Nuxt 3 中，只有以 `NUXT_PUBLIC_` 开头的环境变量才会暴露给客户端
 - 服务端可以直接访问所有环境变量（通过 `useRuntimeConfig()`）
+- **SEO 配置**：
+  - `NUXT_PUBLIC_SITE_BASE`：站点域名，本地开发默认 `http://localhost:3000`，生产环境替换为真实域名（如 `https://yourdomain.com`）
+  - `NUXT_PUBLIC_SITE_NAME`：站点名称，用于 SEO meta 标签和 JSON-LD
 
 ## 开发
 
@@ -216,6 +223,100 @@ pnpm preview
 # 静态导出（用于方案一）
 pnpm generate
 ```
+
+## SEO 测试
+
+### 本地测试（无域名）
+
+项目已配置支持本地测试，默认使用 `http://localhost:3000` 作为站点域名。
+
+#### 1. 测试页面 SEO 元数据
+
+启动开发服务器后，访问首页并查看页面源码：
+
+```bash
+# 启动开发服务器
+pnpm dev
+
+# 访问 http://localhost:3000
+# 右键 -> 查看页面源码（或 Ctrl+U / Cmd+Option+U）
+```
+
+**检查项：**
+- `<title>` 标签是否包含站点名称
+- `<meta name="description">` 是否包含描述
+- `<meta property="og:*">` OG 标签是否完整
+- `<link rel="canonical">` 是否指向正确 URL
+- `<script type="application/ld+json">` JSON-LD 结构化数据是否存在
+
+#### 2. 测试 Sitemap
+
+访问 sitemap 端点：
+
+```bash
+# 浏览器访问
+http://localhost:3000/sitemap.xml
+```
+
+**预期结果：**
+- 返回 XML 格式的站点地图
+- 包含首页、分类页、文章页的 URL
+- URL 使用 `http://localhost:3000` 作为基础域名
+
+#### 3. 测试 Robots.txt
+
+访问 robots 端点：
+
+```bash
+# 浏览器访问
+http://localhost:3000/robots.txt
+```
+
+**预期结果：**
+- 返回文本格式的 robots.txt
+- 禁止抓取 `/admin/` 路径
+- 指向 sitemap：`Sitemap: http://localhost:3000/sitemap.xml`
+
+#### 4. 使用浏览器开发者工具验证
+
+打开浏览器开发者工具（F12），在 Network 标签中：
+
+1. **查看 HTML 响应**：检查响应头中的 `Content-Type` 和 HTML 内容
+2. **查看 Head 标签**：在 Elements 标签中检查 `<head>` 部分的所有 meta 标签
+3. **验证 JSON-LD**：在 Console 中运行 `JSON.parse(document.querySelector('script[type="application/ld+json"]').textContent)` 验证结构化数据
+
+#### 5. 使用 SEO 工具验证（可选）
+
+可以使用在线工具验证本地 SEO：
+
+- **Google Rich Results Test**：需要将本地服务暴露到公网（可使用 ngrok）
+- **本地验证**：直接查看页面源码和网络请求
+
+### 生产环境配置
+
+上线前，修改环境变量：
+
+```bash
+# .env 或生产环境配置
+NUXT_PUBLIC_SITE_BASE=https://yourdomain.com
+NUXT_PUBLIC_SITE_NAME=你的博客名称
+```
+
+**注意事项：**
+- 确保生产环境的 `NUXT_PUBLIC_SITE_BASE` 使用 HTTPS
+- 确保域名已正确配置 DNS 和 SSL 证书
+- 提交 sitemap 到 Google Search Console 和百度资源平台
+
+### SEO 功能清单
+
+- [x] 动态生成 title 和 description
+- [x] Open Graph (OG) 标签
+- [x] Twitter Card 标签
+- [x] Canonical URL
+- [x] JSON-LD 结构化数据（Blog、BlogPosting）
+- [x] Sitemap.xml 自动生成
+- [x] Robots.txt 自动生成
+- [x] 禁止抓取 `/admin/` 路径
 
 ## 依赖
 

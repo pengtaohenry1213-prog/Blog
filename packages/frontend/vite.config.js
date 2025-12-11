@@ -109,7 +109,7 @@ export default defineConfig({
       }
     }
   },
-  // 优化：预加载优化
+  // 优化：预加载优化, 减少首次冷启动和二次预构建等待；保留按需图标加载避免体积膨胀
   optimizeDeps: {
     include: ['vue', 'vue-router', 'pinia', 'element-plus'],
     exclude: ['@element-plus/icons-vue'], // 排除图标，按需加载

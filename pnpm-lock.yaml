@@ -155,58 +155,6 @@ importers:
         specifier: ^5.0.11
         version: 5.4.21(@types/node@24.10.1)(sass@1.94.2)(terser@5.44.1)
 
-  packages/nuxt-blog:
-    dependencies:
-      '@blog/common':
-        specifier: workspace:*
-        version: link:../common
-      '@element-plus/icons-vue':
-        specifier: ^2.3.1
-        version: 2.3.2(vue@3.5.25)
-      '@pinia/nuxt':
-        specifier: ^0.5.1
-        version: 0.5.5(magicast@0.5.1)(vue@3.5.25)
-      dayjs:
-        specifier: ^1.11.19
-        version: 1.11.19
-      echarts:
-        specifier: ^5.5.0
-        version: 5.6.0
-      element-plus:
-        specifier: ^2.11.9
-        version: 2.11.9(vue@3.5.25)
-      nuxt:
-        specifier: ^3.12.0
-        version: 3.20.1(@parcel/watcher@2.5.1)(@types/node@24.10.1)(@vue/compiler-sfc@3.5.25)(db0@0.3.4(mysql2@3.15.3))(eslint@8.57.1)(ioredis@5.8.2)(magicast@0.5.1)(mysql2@3.15.3)(optionator@0.9.4)(rollup@4.53.3)(sass@1.94.2)(terser@5.44.1)(vite@7.2.4(@types/node@24.10.1)(jiti@2.6.1)(sass@1.94.2)(terser@5.44.1)(yaml@2.8.1))(yaml@2.8.1)
-      path:
-        specifier: ^0.12.7
-        version: 0.12.7
-      pinia:
-        specifier: ^2.1.7
-        version: 2.3.1(vue@3.5.25)
-      vditor:
-        specifier: ^3.11.2
-        version: 3.11.2
-    devDependencies:
-      eslint:
-        specifier: ^8.56.0
-        version: 8.57.1
-      eslint-plugin-vue:
-        specifier: ^9.20.0
-        version: 9.33.0(eslint@8.57.1)
-      prettier:
-        specifier: ^3.2.4
-        version: 3.7.2
-      sass:
-        specifier: ^1.94.1
-        version: 1.94.2
-      unplugin-auto-import:
-        specifier: ^20.2.0
-        version: 20.3.0(@nuxt/kit@4.2.1(magicast@0.5.1))(@vueuse/core@9.13.0(vue@3.5.25))
-      unplugin-vue-components:
-        specifier: ^30.0.0
-        version: 30.0.0(@babel/parser@7.28.5)(@nuxt/kit@4.2.1(magicast@0.5.1))(vue@3.5.25)
-
   packages/nuxt-ssr:
     dependencies:
       '@blog/common':
@@ -239,6 +187,12 @@ importers:
       vditor:
         specifier: ^3.11.2
         version: 3.11.2
+      vue:
+        specifier: ^3.4.0
+        version: 3.5.25
+      vue-router:
+        specifier: ^4.5.0
+        version: 4.6.3(vue@3.5.25)
     devDependencies:
       eslint:
         specifier: ^8.56.0

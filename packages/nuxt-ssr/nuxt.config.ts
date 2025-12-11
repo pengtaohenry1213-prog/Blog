@@ -1,6 +1,7 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { readFileSync } from 'fs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -10,6 +11,7 @@ export default defineNuxtConfig({
   // 开发服务器配置
   devServer: {
     port: 3000, // 避免与后端 3001 冲突
+    host: '0.0.0.0', // 允许局域网访问，设置为 '0.0.0.0' 而不是布尔值
   },
 
   // SSR 配置（默认开启）
@@ -41,7 +43,12 @@ export default defineNuxtConfig({
     apiSecret: '', // 可以用于服务端 API 密钥
     // 客户端可访问的配置（需要 NUXT_PUBLIC_ 前缀）
     public: {
-      apiBase: process.env.NUXT_PUBLIC_API_BASE_URL || 'http://localhost:3001/api'
+      // API 基础地址（客户端可访问，需要 NUXT_PUBLIC_ 前缀）
+      apiBase: process.env.NUXT_PUBLIC_API_BASE_URL || 'http://localhost:3001/api',
+      
+      // SEO 配置：通过环境变量设置站点域名，本地开发默认使用 localhost:3000
+      siteBase: process.env.NUXT_PUBLIC_SITE_BASE || 'http://localhost:3000',
+      siteName: process.env.NUXT_PUBLIC_SITE_NAME || '个人博客'
     }
   },
 
@@ -80,6 +87,52 @@ export default defineNuxtConfig({
       ],
     },
     plugins: [
+      // 修复 dayjs 插件导入问题：将命名导出转换为默认导出
+      {
+        name: 'fix-dayjs-plugin-import',
+        enforce: 'pre',
+        load(id) {
+          // 处理 dayjs 插件的导入
+          if (id.includes('dayjs/plugin/') && id.endsWith('.js')) {
+            try {
+              let code = readFileSync(id, 'utf-8');
+              
+              // 检查是否已经有默认导出
+              if (!code.includes('export default')) {
+                // 提取插件函数名（dayjs 插件通常是 export default function 或 export function）
+                // 先尝试匹配 export default function
+                const defaultFunctionMatch = code.match(/export\s+default\s+function\s+(\w+)/);
+                if (defaultFunctionMatch) {
+                  // 已经有默认导出，不需要修改
+                  return null;
+                }
+                
+                // 尝试匹配 export function
+                const functionMatch = code.match(/export\s+function\s+(\w+)/);
+                if (functionMatch) {
+                  const pluginName = functionMatch[1];
+                  // 添加默认导出
+                  code += `\nexport default ${pluginName};`;
+                  return code;
+                }
+                
+                // 尝试匹配 export const
+                const constMatch = code.match(/export\s+const\s+(\w+)\s*=/);
+                if (constMatch) {
+                  const pluginName = constMatch[1];
+                  // 添加默认导出
+                  code += `\nexport default ${pluginName};`;
+                  return code;
+                }
+              }
+            } catch (e) {
+              // 如果读取失败，返回 null 使用默认处理
+              return null;
+            }
+          }
+          return null;
+        },
+      },
       // 修复 dayjs UMD 格式问题：在构建时转换导入
       {
         name: 'fix-dayjs-umd',
@@ -137,4 +190,3 @@ export default defineNuxtConfig({
   //   payloadExtraction: false,
   // },
 });
-
