@@ -30,7 +30,7 @@ Docker Compose 是 Docker 官方提供的用于定义和运行多容器 Docker �
     e.g.
     services:
       mysql:
-        image: mysql:latest
+        image: mysql:8.0
         container_name: blog-mysql
   
   * 容器启动时，会应用配置中的端口映射、环境变量、挂载卷等参数（等价于 docker run 的参数）。
@@ -54,7 +54,7 @@ version: '3.8'
 services:
   # MySQL 数据库
   mysql:
-    image: mysql:latest
+    image: mysql:8.0
     container_name: blog-mysql
     environment:
       MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:-root123}
@@ -77,7 +77,7 @@ services:
 
   # Redis 缓存
   redis:
-    image: redis:latest
+    image: redis:8.4.0
     container_name: blog-redis
     ports:
       - "${REDIS_PORT:-6379}:6379"

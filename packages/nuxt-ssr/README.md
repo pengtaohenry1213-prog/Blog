@@ -481,7 +481,7 @@ import { fileURLToPath } from 'url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-console.log('process.env.NUXT_PUBLIC_API_BASE_URL = ',process.env.NUXT_PUBLIC_API_BASE_URL);
+// console.log('process.env.NUXT_PUBLIC_API_BASE_URL = ',process.env.NUXT_PUBLIC_API_BASE_URL);
 
 export default defineNuxtConfig({
   // 开发服务器配置

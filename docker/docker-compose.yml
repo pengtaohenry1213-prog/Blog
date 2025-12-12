@@ -3,7 +3,7 @@
 services:
   # MySQL 数据库
   mysql:
-    image: mysql:latest # 使用官方最新版 MySQL
+    image: mysql:8.0 # 使用官方最新版 MySQL
     container_name: blog-mysql
     environment:
       MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:-root123}  # root 密码（默认 root123，可用 .env 覆盖）
@@ -15,6 +15,7 @@ services:
     volumes:
       - mysql_data:/var/lib/mysql            # 数据持久化卷
       - ./scripts/init.sql:/docker-entrypoint-initdb.d/init.sql:ro  # 首次启动执行初始化 SQL
+    command: --default-authentication-plugin=caching_sha2_password  # 设置默认认证插件为 caching_sha2_password
     networks:
       - blog-network
     healthcheck: # 健康检查，保证后端依赖前数据库就绪
@@ -28,7 +29,7 @@ services:
   # AOF（Append Only File）是 Redis 提供的持久化机制之一（另一种是 RDB）
   # 它通过记录 Redis 服务器接收到的所有写命令（如 SET、HSET、LPUSH 等），以文本协议的形式追加到 AOF 文件中，实现数据持久化。
   redis:
-    image: redis:latest
+    image: redis:8.4.0
     container_name: blog-redis
     ports:
       - "${REDIS_PORT:-6379}:6379"

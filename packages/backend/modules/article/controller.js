@@ -46,7 +46,8 @@ class ArticleController {
   async getDetail(req, res, next) {
     try {
       const { id } = req.params;
-      const article = await articleService.getArticleById(parseInt(id));
+      const userId = req.userId || null; // 如果已登录，传递用户ID
+      const article = await articleService.getArticleById(parseInt(id), userId);
 
       if (!article) {
         return res.status(404).json({
@@ -149,6 +150,61 @@ class ArticleController {
           code: 403,
           message: error.message
         });
+      }
+      next(error);
+    }
+  }
+
+  /**
+   * 点赞文章
+   */
+  async like(req, res, next) {
+    try {
+      const userId = req.userId;
+      const articleId = Number(req.params.id);
+      const result = await articleService.like(articleId, userId);
+      return res.status(200).json({ code: 200, message: '点赞成功', data: result });
+    } catch (error) {
+      logger.error(`Like article error: ${error.message}`);
+      if (error.message.includes('不存在')) {
+        return res.status(404).json({ code: 404, message: error.message });
+      }
+      next(error);
+    }
+  }
+
+  /**
+   * 取消点赞文章
+   */
+  async unlike(req, res, next) {
+    try {
+      const userId = req.userId;
+      const articleId = Number(req.params.id);
+      const result = await articleService.unlike(articleId, userId);
+      return res.status(200).json({ code: 200, message: '取消点赞成功', data: result });
+    } catch (error) {
+      logger.error(`Unlike article error: ${error.message}`);
+      if (error.message.includes('不存在')) {
+        return res.status(404).json({ code: 404, message: error.message });
+      }
+      next(error);
+    }
+  }
+
+  /**
+   * 投票文章
+   */
+  async vote(req, res, next) {
+    try {
+      const userId = req.userId;
+      const articleId = Number(req.params.id);
+      const { value } = req.body; // 1 | -1 | 0(取消投票)
+      const result = await articleService.vote(articleId, userId, value);
+      return res.status(200).json({ code: 200, message: '投票成功', data: result });
+    } catch (error) {
+      logger.error(`Vote article error: ${error.message}`);
+      if (error.message.includes('不存在') || error.message.includes('无效')) {
+        return res.status(400).json({ code: 400, message: error.message });
       }
       next(error);
     }

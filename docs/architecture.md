@@ -98,7 +98,7 @@ blog-project/
 
 ### 4. 部署方案（Docker）
 - **镜像规划**：
-  1. 基础镜像：使用官方 `mysql:latest` 和 `redis:latest`
+  1. 基础镜像：使用官方 `mysql:8.0` 和 `redis:8.4.0`
   2. 前端镜像：基于 `nginx:alpine` 打包静态资源
   3. 后端镜像：基于 `node:lts-alpine` 部署服务
 - **容器编排（docker-compose）**：

@@ -19,8 +19,8 @@
 
 | 服务 | 镜像/构建 | 端口 | 依赖 | 说明 |
 | --- | --- | --- | --- | --- |
-| mysql | `mysql:latest` | `DB_PORT`→3306 | - | 使用 `scripts/init.sql` 初始化数据库与索引 |
-| redis | `redis:latest` | `REDIS_PORT`→6379 | - | `appendonly yes` 持久化，供后端缓存使用 |
+| mysql | `mysql:8.0` | `DB_PORT`→3306 | - | 使用 `scripts/init.sql` 初始化数据库与索引 |
+| redis | `redis:8.4.0` | `REDIS_PORT`→6379 | - | `appendonly yes` 持久化，供后端缓存使用 |
 | backend | 自建镜像（Node LTS + pnpm） | `BACKEND_PORT`→3001 | mysql、redis | 读取环境变量连接数据库/缓存，健康检查 `GET /api/health` |
 | frontend | Nginx | `FRONTEND_PORT`→80 | backend | Vue 构建产物由 Nginx 托管，`/api` 代理到后端 |
 
@@ -150,8 +150,8 @@ bash scripts/load-images.sh
 如果需要更新备份镜像，可以使用以下命令：
 
 ```bash
-docker save mysql:latest -o docker/backup/mysql-latest.tar
-docker save redis:latest -o docker/backup/redis-latest.tar
+docker save mysql:8.0 -o docker/backup/mysql-8.0.tar
+docker save redis:8.4.0 -o docker/backup/redis-8.4.0.tar
 docker save node:lts-alpine -o docker/backup/node-lts-alpine.tar
 docker save nginx:alpine -o docker/backup/nginx-alpine.tar
 ```

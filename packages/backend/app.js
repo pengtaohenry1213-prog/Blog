@@ -88,6 +88,8 @@ import { config } from './config/index.js';
 import sequelize from './config/database.js'; // 导入数据库连接
 import redisClient from './config/redis.js'; // 导入 Redis 连接
 import logger from './utils/logger.js'; // 导入日志记录器
+// 导入所有模型，确保 Sequelize 能够识别它们（用于 sync）
+import './models/index.js';
 import { requestLogger } from './middleware/requestLogger.js'; // 导入请求日志记录器
 import { errorHandler, notFoundHandler } from './middleware/errorHandler.js'; // 错误处理中间件
 

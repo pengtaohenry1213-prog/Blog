@@ -109,4 +109,7 @@ Article.belongsTo(Category, { foreignKey: 'category_id', as: 'category' });
 // 添加反向关联（延迟定义，避免循环依赖）
 Category.hasMany(Article, { foreignKey: 'category_id', as: 'articles' });
 
+// 注意：ArticleReaction 和 ArticleVote 的反向关联在各自的模型文件中定义
+// 这里不直接导入它们以避免循环依赖
+
 export default Article;

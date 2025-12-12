@@ -24,7 +24,6 @@
         </el-form-item>
         <el-form-item label="内容" prop="content">
           <MarkdownEditor 
-            v-show="form.content.length > 0"
             v-model="form.content" 
             @analysis="handleAnalysis"
             @validation="handleValidation"
@@ -99,7 +98,7 @@
           </el-radio-group>
         </el-form-item>
         <el-form-item>
-          <el-button type="primary" :loading="loading" @click="handleSubmit">保存</el-button>
+          <el-button type="primary" :loading="submitLoading" @click="handleSubmit">保存</el-button>
           <el-button @click="handleCancel">取消</el-button>
         </el-form-item>
       </el-form>
@@ -108,18 +107,19 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted, computed } from 'vue';
+import { ref, reactive, nextTick, onMounted, computed, defineAsyncComponent } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { articleApi } from '@/api';
 import { ElMessage } from 'element-plus'; // 这些 import 可以移除（插件会自动处理）
-import MarkdownEditor from '@/components/MarkdownEditor.vue'
+// import MarkdownEditor from '@/components/MarkdownEditor.vue'
 import { useDebounce } from '@/composables/useDebounce.js'
 
 const route = useRoute();
 const router = useRouter();
 const formRef = ref(null);
-// const loading = ref(false); // 移除独立的 loading，使用 useDebounce 返回的 loading
+const pageLoading = ref(true); // 页面/编辑器加载中
 const isEdit = computed(() => !!route.params.id);
+
 
 const form = reactive({
   title: '',
@@ -138,10 +138,15 @@ const rules = {
   content: [{ required: true, message: '请输入文章内容', trigger: 'blur' }]
 };
 
+// 加载文章
 async function loadArticle() {
-  if (!isEdit.value) return;
+  if (!isEdit.value) {
+    pageLoading.value = false; // 非编辑直接显示编辑器（使用 loadingComponent 占位）
+    return;
+  }
 
   try {
+    pageLoading.value = true;
     const article = await articleApi.getDetail(route.params.id);
     Object.assign(form, {
       title: article.title,
@@ -153,18 +158,48 @@ async function loadArticle() {
   } catch (error) {
     ElMessage.error('加载文章失败');
     router.push('/admin/articles');
+  } finally {
+    // 数据加载完毕，交给 MarkdownEditor 的 loadingComponent 继续兜底
+    pageLoading.value = false;
   }
 }
 
-// 使用 useDebounce 包装提交函数
-// async function handleSubmit() {
-const { execute: debouncedSubmit, loading } = useDebounce(
+// 懒加载 MarkdownEditor，提供加载占位，避免白屏闪烁
+const MarkdownEditor = defineAsyncComponent({
+  loader: () => import('@/components/MarkdownEditor.vue').finally(() => {
+    // 异步组件真实加载完成时，关闭页面级 loading
+    pageLoading.value = false;
+  }),
+  // loadingComponent: {
+  //   template: `
+  //     <div class="editor-skeleton-card">
+  //       <div class="skeleton-header">
+  //         <el-skeleton-item variant="h1" class="skeleton-title" />
+  //       </div>
+  //       <div class="skeleton-meta">
+  //         <el-skeleton-item variant="text" class="skeleton-text" />
+  //         <el-skeleton-item variant="text" class="skeleton-text short" />
+  //         <el-skeleton-item variant="text" class="skeleton-text short" />
+  //       </div>
+  //       <el-skeleton :rows="6" animated />
+  //       <div class="skeleton-tip">编辑器加载中，请稍候...</div>
+  //     </div>
+  //   `,
+  // },
+  delay: 0,
+  onError: (error, attempt, fail, retry) => {
+    if(attempt < 3) retry();
+    else fail();
+  }
+});
+
+// 提交
+const { execute: debouncedSubmit, loading: submitLoading } = useDebounce(
   async () => {
     if (!formRef.value) return;
 
     await formRef.value.validate(async (valid) => {
       if (valid) {
-        loading.value = true;
         try {
           if (isEdit.value) {
             await articleApi.update(route.params.id, form);
@@ -177,8 +212,6 @@ const { execute: debouncedSubmit, loading } = useDebounce(
         } catch (error) {
           ElMessage.error(isEdit.value ? '更新失败' : '创建失败');
           // 错误会被 useDebounce 的 onError 处理，这里可以不再处理
-        } finally {
-          loading.value = false;
         }
       }
     });
@@ -222,14 +255,15 @@ function handleValidation(data) {
   contentValidation.value = data;
 }
 
-onMounted(() => {
+onMounted(async () => {
+  await nextTick();
   loadArticle();
 });
 </script>
 
 <style scoped>
 .article-form {
-  padding: 20px;
+  padding: 0px;
 }
 
 .content-analysis {
@@ -262,5 +296,42 @@ onMounted(() => {
   margin: 5px 0; padding-left: 20px;
 }
 
+.el-card {
+  width: auto;
+}
+.editor-skeleton-card {
+  padding: 16px;
+  border: 1px solid #ebeef5;
+  border-radius: 6px;
+  background: #f9fafc;
+}
+
+.skeleton-header {
+  margin-bottom: 12px;
+}
+
+.skeleton-meta {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.skeleton-title {
+  width: 60%;
+}
+
+.skeleton-text {
+  width: 30%;
+}
+
+.skeleton-text.short {
+  width: 18%;
+}
+
+.skeleton-tip {
+  margin-top: 12px;
+  color: #909399;
+  font-size: 13px;
+}
 </style>
 

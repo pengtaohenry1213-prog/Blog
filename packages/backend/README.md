@@ -161,7 +161,7 @@ DB_PASSWORD=your_password
 # Redis 配置
 REDIS_HOST=localhost
 REDIS_PORT=6379
-REDIS_PASSWORD=
+REDIS_PASSWORD=abc123
 
 # JWT 配置
 JWT_SECRET=your_jwt_secret_key_change_in_production

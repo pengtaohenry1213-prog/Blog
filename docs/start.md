@@ -168,8 +168,8 @@ docker-compose ps
 NAME            IMAGE             COMMAND                  SERVICE    CREATED             STATUS                       PORTS
 blog-backend    docker-backend    "docker-entrypoint.s…"   backend    15 minutes ago      Up 15 minutes (healthy)      0.0.0.0:3001->3001/tcp, [::]:3001->3001/tcp
 blog-frontend   docker-frontend   "/docker-entrypoint.…"   frontend   15 minutes ago      Up 15 minutes                0.0.0.0:80->80/tcp, [::]:80->80/tcp
-blog-mysql      mysql:latest      "docker-entrypoint.s…"   mysql      About an hour ago   Up 39 minutes (healthy)      0.0.0.0:3306->3306/tcp, [::]:3306->3306/tcp
-blog-redis      redis:latest      "docker-entrypoint.s…"   redis      About an hour ago   Up About an hour (healthy)   0.0.0.0:6379->6379/tcp, [::]:6379->6379/tcp
+blog-mysql      mysql:8.0      "docker-entrypoint.s…"   mysql      About an hour ago   Up 39 minutes (healthy)      0.0.0.0:3306->3306/tcp, [::]:3306->3306/tcp
+blog-redis      redis:8.4.0      "docker-entrypoint.s…"   redis      About an hour ago   Up About an hour (healthy)   0.0.0.0:6379->6379/tcp, [::]:6379->6379/tcp
 ```
 
 ### 5. 查看日志

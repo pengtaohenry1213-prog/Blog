@@ -13,7 +13,7 @@ load_if_missing() {
 }
 
 cd /Users/taopeng/Desktop/Blog/docker/backup
-load_if_missing mysql:latest mysql-latest.tar
-load_if_missing redis:latest redis-latest.tar
+load_if_missing mysql:8.0 mysql-8.0.tar
+load_if_missing redis:8.4.0 redis-8.4.0.tar
 load_if_missing node:lts-alpine node-lts-alpine.tar
 load_if_missing nginx:alpine nginx-alpine.tar

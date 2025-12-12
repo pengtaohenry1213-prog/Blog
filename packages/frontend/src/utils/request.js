@@ -15,6 +15,19 @@ request.interceptors.request.use(
     if (authStore.token) {
       config.headers.Authorization = `Bearer ${authStore.token}`;
     }
+
+    // 仅对写操作加幂等键（如果请求头中还没有指定）
+    // 注意：如果组件已经指定了 Idempotency-Key，则使用组件指定的值
+    const method = (config.method || 'get').toLowerCase();
+    const needIdem = ['post', 'put', 'patch', 'delete'].includes(method);
+
+    if (needIdem && !config.headers['Idempotency-Key']) {
+      // 如果没有指定幂等键，生成一个随机键（用于一般场景）
+      // 对于需要严格幂等的操作（如点赞、投票），应该在调用时显式传入
+      const key = crypto.randomUUID ? crypto.randomUUID() : Date.now() + '-' + Math.random();
+      config.headers['Idempotency-Key'] = key;
+    }
+
     return config;
   },
   (error) => {
@@ -57,8 +70,12 @@ request.interceptors.response.use(
         case 404:
           ElMessage.error('请求的资源不存在');
           break;
+        case 409:
+          // 409 Conflict - 幂等性冲突（请求已处理或正在处理中）
+          ElMessage.warning(data?.message || '请求已处理，请勿重复提交');
+          break;
         case 429:
-          ElMessage.error('请求过于频繁，请稍后再试 429');
+          ElMessage.error('请求过于频繁，请稍后再试');
           break;
         case 500:
           ElMessage.error('服务器内部错误');

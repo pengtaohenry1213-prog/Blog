@@ -3,8 +3,21 @@ import articleController from './controller.js';
 import { authenticate, authorize, optionalAuthenticate } from '../../middleware/auth.js';
 import { body, query, param } from 'express-validator';
 import { validate } from '../../middleware/validator.js';
+import { idempotencyGuard } from '../../middleware/idempotency.js';
 
 const router = express.Router();
+
+/*
+  router.post(path, [middleware...], handler)
+  middleware（可选，一个或多个）, 如下, 执行顺序：从左到右
+  router.post(
+    '/create',
+    authMiddleware,
+    validateMiddleware,
+    (req, res) => {}
+  );
+
+*/
 
 /**
  * @swagger
@@ -108,6 +121,7 @@ router.get(
 router.post(
   '/',
   authenticate,
+  idempotencyGuard,   // 在校验和控制器之前
   [
     body('title').notEmpty().withMessage('标题不能为空'),
     body('content').notEmpty().withMessage('内容不能为空'),
@@ -162,6 +176,122 @@ router.delete(
   authenticate,
   [param('id').isInt(), validate],
   articleController.delete
+);
+
+/**
+ * @swagger
+ * /api/articles/:id/like:
+ *   post:
+ *     summary: 点赞文章
+ *     tags: [Articles]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - name: id
+ *         in: path
+ *         required: true
+ *         type: integer
+ *     responses:
+ *       200:
+ *         description: 点赞成功
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - idempotencyKey
+ *             properties:
+ *               idempotencyKey:
+ *                 type: string
+ *                 description: 幂等键，用于保证同一操作只执行一次
+ */
+router.post(
+  '/:id/like', 
+  authenticate, 
+  idempotencyGuard, // 在校验和控制器之前执行
+  [param('id').isInt(), validate], 
+  articleController.like
+);
+
+/**
+ * @swagger
+ * /api/articles/:id/unlike:
+ *   delete:
+ *     summary: 取消点赞文章
+ *     tags: [Articles]
+ *     security:
+ *       - bearerAuth: []
+ *       - name: id
+ *         in: path
+ *         required: true
+ *         type: integer
+ *     responses:
+ *       200:
+ *         description: 取消点赞成功
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - idempotencyKey
+ *             properties:
+ *               idempotencyKey:
+ *                 type: string
+ *                 description: 幂等键，用于保证同一操作只执行一次
+ */
+router.post(
+  '/:id/unlike', 
+  authenticate, 
+  idempotencyGuard, // 在校验和控制器之前执行
+  [param('id').isInt(), validate], 
+  articleController.unlike
+);
+
+/**
+ * @swagger
+ * /api/articles/:id/vote:
+ *   post:
+ *     summary: 投票文章
+ *     tags: [Articles]
+ *     security:
+ *       - bearerAuth: []
+ *       - name: id
+ *         in: path
+ *         required: true
+ *         type: integer
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - value
+ *             properties:
+ *               value:
+ *                 type: integer
+ *                 enum: [1, -1, 0]
+ *               idempotencyKey:
+ *                 type: string
+ *                 description: 幂等键，用于保证同一操作只执行一次
+ *     responses:
+ *       200:
+ *         description: 投票成功
+ */
+router.post(
+  '/:id/vote', 
+  authenticate, 
+  idempotencyGuard, // 在校验和控制器之前执行
+  [
+    param('id').isInt(),
+    body('value').isIn([1, -1, 0]).withMessage('投票值必须是 1(赞成)、-1(反对) 或 0(取消)'),
+    validate
+  ], 
+  articleController.vote
 );
 
 export default router;

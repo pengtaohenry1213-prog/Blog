@@ -1,0 +1,181 @@
+# 彭涛 - 前端开发工程师 个人简历（简化口语版）
+- 最高学历：大专（北京语言大学英语语言文学专业）
+
+## 核心优势
+1. 做前端开发10多年, 还搞过3年多企业级Web系统架构, 不管是Web端、微信小程序, 还是微前端这些架构, 都有实际落地经验。
+2. 熟练用Vue3、TypeScript这些核心技术, 擅长数据可视化、组件封装、在线Excel开发, 还能把AI工具集成到前端, 帮项目提效优化。
+3. 能带团队也能扛大项目, 跨部门协作推进项目全流程交付没问题, 还主导过不少集团级核心项目, 效果都不错。
+4. 英语读写扎实, 看英文技术文档、写英文工作汇报和沟通函件都没问题。
+
+---
+
+## 工作经历
+### 1. 中粮福临门食品营销有限公司（2022.04 至今）| 前端开发工程师
+- 主要负责集团数据可视化大屏、在线表格引擎、微信小程序这些核心项目的前端开发和架构设计, 还会封装通用组件、优化系统性能, 协调产品、后端、测试等部门推进工作。
+- 做出的关键成果：
+  - 搭了在线表格计算平台, 支持上千单元格实时算数据, 用特殊算法把渲染性能提了3倍；
+  - 开发可视化大屏平台, 做了各种数据分析图表和通用组件库, 让团队二次开发效率高了40%；
+  - 做AI会话系统前端, 能识别语音、展示多种格式内容, 还能灵活添加或移除AI工具模块；
+  - 升级架构和工程化体系, 实现多项目统一部署、单点登录, 减少线上故障风险。
+
+### 2. 北京伏安基业电气技术有限公司（2009.07 - 2022.04）| Web前端
+- 负责电力监测系统、设备诊断平台的前端架构搭建和可视化功能开发, 解决不同浏览器兼容问题, 对接后端做数据交互, 还负责项目后期维护和功能更新。
+- 做出的关键成果：
+  - 开发发电机故障诊断系统, 能实时监控电厂设备运行状态；
+  - 主导多个电厂监测系统前端开发, 保障系统在不同浏览器上稳定运行；
+  - 搭建公司内部网络平台, 让内部系统互联互通, 提升办公协同效率。
+
+### 3. 其他相关工作经历
+- 在北京智创汇盈网络科技有限公司做过前端开发, 负责门户网站搭建、UI设计和浏览器兼容相关工作；
+- 在深圳电站专家系统做过Web前端开发和UI设计, 开发发电机故障诊断相关平台, 满足电站设备监控管理需求。
+
+---
+
+## 项目经历
+### 1. 微信小程序同步开发项目（2022.04 至今）| 核心开发
+- 要把集团可视化大屏的核心功能同步到微信小程序, 还要保证多终端使用体验一致, 方便后续业务拓展。
+- 负责开发小程序核心功能, 封装复杂组件, 优化加载速度和兼容性, 确保和网页端功能、数据同步。
+
+### 2. 集团项目框架升级项目（2022.04 至今）| 架构设计与开发
+- 原来集团多个项目单独部署, 更新慢、维护麻烦, 需要搭建统一架构, 方便项目迭代和协同开发。
+- 主导设计架构方案, 用微前端和单点登录技术, 搭建工程化流程, 推动各业务线项目落地, 解决迁移中的技术问题。
+
+---
+
+## 技能掌握
+- 前端技术：熟练用Vue3、TypeScript、JavaScript、HTML5、CSS3等, 懂微前端、SSR这些架构；
+- 开发工具：会用Webpack、Vite、Jest、Git, 能做Nginx部署、CI/CD相关工作；
+- 可视化与AI：擅长用ECharts、D3.js做数据可视化, 能集成AI工具、实现语音识别等功能, 会用AI开发工具加快进度；
+- 设计能力：能做UI设计和原型搭建, 完成系统界面设计和业务流程可视化。
+
+---
+
+## 个人成果
+- 在简书发布20多篇技术文章, 内容涉及微前端、架构优化、工具使用等, 还开源了技术文档和代码到Github, 被行业开发者参考引用。
+
+
+---
+
+# 面试口头自我介绍脚本（贴合岗位要求·90秒终极版）
+面试官好！我是彭涛, 我有10多年全栈式前端开发经验. 精通Vue生态（Vue3、Element Plus、Vue Router 和 Nuxt3服务端渲染特性）, 
+熟练运用HTML5、CSS3、TypeScript及JavaScript（ES6+）, 能独立开发高可用性、用户友好的前端应用, 编写高效可靠的生产级代码。
+
+在岗位职责落地方面, 我有丰富实战积累：
+一是: 跨团队协作, 既能和产品、设计团队精准对齐需求、拆解业务逻辑、制定落地解决方案, 也能与后端深度配合完成系统整合与数据互通.
+比如集团微前端架构升级项目中, 跨部门协同实现微服务+JWT单点登录, 顺利完成新老项目迁移, 解决了多项目独立部署的核心痛点；
+二是: 工程化与质量保障, 精通Webpack、Babel、Vite等前端工程工具, 熟练使用Git做版本控制, 
+主导搭建了Jest单元测试体系, 严格参与代码审查, 落地完整CI/CD流程, 
+能有效保障跨浏览器（IE/Chrome等）、多终端（PC/小程序）的兼容性与代码质量, 完全契合岗位对工程化的要求。
+
+性能优化与技术创新上, 我有多个可量化成果：
+在某大型集团化公司主导在线表格计算平台时, 
+用Vue3+Vite+vxe-table技术栈, 设计核心公式解析逻辑, 
+通过Kahn拓扑排序算法优化计算效率, 支持上千单元格实时计算, 让系统渲染性能提升3倍；
+
+开发可视化大屏平台时, 集成ECharts、D3.js实现多维数据分析可视化, 封装通用组件库让团队二次开发效率提升40%；
+平时会主动用Gzip、懒加载、webp格式图片、代码分割等方案做页面性能调优, 
+也常通过Chrome性能面板、Lighthouse工具分析优化空间, 持续提升产品体验。
+
+此外, 我完全覆盖岗位优先技能：
+具备Node.js、Express后端开发经验, 懂数据库设计与Nginx、Docker部署, 契合“后端编程语言经验”要求；
+搭建CI/CD工程化流程时, 以测试驱动开发（TDD）思路构建Jest单元测试体系, 
+覆盖核心组件与工具函数逻辑, 降低线上故障风险, 同时熟悉DevOps实践, 
+能独立完成从开发、部署到运维的全流程；
+
+英语读写扎实, 能轻松应对英文技术文档、工作邮件与沟通函件。
+
+我平时还在公共博客平台 发布20多篇技术文章、在Github开源项目代码, 
+保持技术沉淀与分享的习惯。非常期待能加入团队, 用扎实的技术积累、工程化思维和实战经验, 
+为项目的前端开发、质量提升与效率优化贡献核心价值！
+
+
+
+---
+
+## Responsibilities:
+**- Develop and Maintain Web Applications:** `开发和维护Web应用程序：`
+Design, build, and maintain front-end and back-end features for web applications, ensuring they are scalable and high-performing. 
+`设计、构建和维护网络应用的前端和后端功能, 确保它们可扩展且性能高。`
+
+**- Work with Front-End Technologies: ** `与前端技术合作：`
+Use HTML, CSS, JavaScript and frameworks like Vue3, TypeScript to create intuitive and responsive user interfaces. 
+`使用HTML、CSS、JavaScript以及Vue3、TypeScript等框架创建直观且响应式的用户界面。`
+
+**- Develop Back-End Services: ** `开发后端服务：`
+Build server-side logic and application programming interfaces(APIs) using technologies like Node.js, Python, Java, or Ruby. 
+`使用Node.js、Python、Java或Ruby等技术构建服务器端逻辑和应用编程接口（APIs）。`
+
+**- Data schema design and database management: ** `数据架构设计和数据库管理：`
+Design and manage databases, such as MySQL, MongoDB, PostgreSQL, or others, ensuring efficient data storage and retrieval. 
+`设计和管理数据库, 如 MySQL、MongoDB、PostgreSQL或其他, 确保高效的数据存储和检索。`
+
+**- Integrate APIs and Third-Party Services:** `集成API和第三方服务：`
+Integrate external APIs and services, such as Payment Gateways, Social Media APIs, or Analytics tools, as needed. 
+`根据需要集成外部API和服务, 例如: 支付网关、社交媒体API或分析工具。`
+
+**- Implement Security Best Practices:** `实施安全最佳实践：`
+Ensure the security of web applications by implementing secure coding practices, data protection, and user authentication mechanisms. 
+`确保通过实施安全编码实践、数据保护和用户身份验证机制来保障Web应用程序的安全。`
+
+**- Perform Testing and Debugging:** `执行测试和调试：`
+Write Unit, Integration, and end-to-end tests, troubleshoot issues, and resolve bugs across the full stack of the application. 
+`编写单元测试、集成测试和端到端测试, 排查问题, 解决应用全栈的bug。`
+
+**- Collaborate with Cross-Functional Teams:** `与跨职能团队协作：`
+Work closely with designers, product managers, and other engineers to gather requirements, plan features, and deliver user-centered solutions. 
+`与设计师、产品经理和其他工程师紧密合作, 收集需求、规划功能, 并交付以用户为中心的解决方案。`
+
+**- Optimize for Performance:** `针对性能优化：`
+Improve performance by optimizing application code, databases, and server configurations to reduce latency and increase efficiency. `通过优化应用程序代码、数据库和服务器配置来提高性能, 以减少延迟并提高效率。`
+
+## Minimum Qualifications: `最低资格:`
+**- Bachelor's Degree or above in Computer Science or related rield or equivalent practical experience.** `本科学历或以上, 计算机科学或相关领域, 或相当的实际工作经验。`
+
+**- Fluent spoken English, written English with effective communication skills and a collaborative attitude, performing cross-functional teams collaboration** `流利的英语口语, 具备有效沟通技能和协作态度的书面英语, 执行跨职能团队协作`
+
+**- Proficiency in Front-End technologies like HTML, CSS, and JavaScript, and experience with at least one modern Front-End framework (e.g. Vue, React, or Angular)** `熟悉前端技术如: HTML、CSS和JavaScript, 并至少具备一种现代前端框架（例如: Vue、React或Angular）的经验`
+
+**- Experience in Back-End Development, knowledgeable of server-side languages such as: Java, Python, Node.js, Ruby, or PHP and familiarity with building RESTful APIs and knowledgable of Web Development Frameworks.** `后端开发经验, 熟悉服务器端语言, 如：Java、Python、Node.js、Ruby 或 PHP, 并了解构建RESTful API和Web开发框架。`
+
+**- Familiarity with variety of data schema design, and database management, e.g. Relational Database: MySQL and NoSQL Database: MongoDB** `熟悉各种数据架构设计以及数据库管理, 例如：关系型数据库：MySQL 和 非关系型数据库：MongoDB`
+
+
+**- Basic Understanding of Cloud Services: Exposure to cloud platforms (e.g. AWS, Azure, Google Cloud, Azure) and understanding of deploying applications in a cloud environment** `云计算服务的基本理解：接触云平台（例如AWS、Azure、Google Cloud、Azure）以及了解在云环境中部署应用程序`
+
+**- Experience with Testing Practices and experience with unit testing, integration testing, and end-to-end testing** `测试实践经验和单元测试、集成测试以及端到端的测试经验`
+
+**- Understanding of Security Best Practices such as authentication, authorization, and data protection, to secure applications** `对安全最佳实践的掌握, 如身份验证、授权和数据保护, 以确保应用程序安全`
+
+**- Proficiency in Debugging and Problem-Solving across both Front-End and Back-End systems.** `熟练掌握前端和后端系统中的调试和问题解决能力。`
+
+**- Familiarity with Continuous Integration/Continuous Deployment (CI/CD) pipelines to automate deployment processes.** `熟悉持续集成/持续部署（CI/CD）管道以自动化部署流程。`
+
+**- Ability to Write Clean, Maintainable Code, adherence to coding standards and best practices, with a focus on creating well-organized, readable, and maintainable code.** `编写清晰、可维护的代码的能力, 遵守编码标准和最佳实践, 重点在于创建组织良好、易于阅读和维护的代码。`
+
+**- Adaptability and Willingness to Learn, ability to quickly learn new technologies and adapt to project requirements.** `适应性`[əˌdæptə ' bɪlətɪ]`和学习能力, 快速学习新技术并适应项目需求的能力。`
+
+**- Experience in AI-related products is preferred.** `人工智能相关产品经验优先`
+
+
+> scalable: `可扩展的`
+> intuitive: ` [in ' tjutiv] 直观的`
+> schema: `架构`, efficient: `高效的`, retrieval: `[ri ' tri:vəl]) 检索`
+> external: `[ik ' stə:nl]`, Analytics: `[Ane ' litiks]`
+> Implement: `[ 'implimənt ] 实施`, 实施安全最佳实践;
+> mechanisms: `[ ' mekənɪzəmz] 机制`, authentication: `[ɔ:ˌθentɪ ' keɪʃn]`
+> by implementing secure coding practices: `通过实施安全编码实践`
+> 确保通过实施安全编码实践、数据保护和用户身份验证机制来保障Web应用程序的安全。
+> Collaborate: `协作`, 与跨职能团队协作
+> 与设计师、产品经理和其他工程师紧密合作, 收集需求、规划功能, 并交付以用户为中心的解决方案。
+> latency: `[ 'leitənsi ] 延迟`, 通过优化应用程序代码、数据库和服务器配置来提高性能, 以减少延迟并提高效率。
+
+> Proficiency: `[prə ' fɪʃnsɪ] 精通`
+> Familiarity `[fəˌmɪli ˈ ærəti]`
+> secure `[sɪˈkjʊə(r)] 安全的`
+> pipeline `[ˈpaɪplaɪn] 管道`
+> adherence `[ədˈhɪərəns] 遵从`
+
+
+
+
+
