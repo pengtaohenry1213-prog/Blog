@@ -14,7 +14,23 @@ services:
       - "${DB_PORT:-3306}:3306"              # 宿主机:容器
     volumes:
       - mysql_data:/var/lib/mysql            # 数据持久化卷
-      - ./scripts/init.sql:/docker-entrypoint-initdb.d/init.sql:ro  # 首次启动执行初始化 SQL
+      # 这里将宿主机的 init.sql 文件挂载到 MySQL 容器的 /docker-entrypoint-initdb.d/ 目录下。
+      # 这样做的目的是: 在 MySQL 容器启动时, 自动执行 init.sql 文件中的 SQL 语句, 初始化数据库。
+      # 注意: 这里的 ro 表示只读, 即不会在容器内修改 init.sql 文件
+      
+      # 补充 - 必然联系: 
+      # * 时序依赖：init.sql 必须在 MySQL 服务启动时执行，才能保证数据库结构和索引在应用启动前就绪
+      # * 自动化部署：通过 Docker 的这种机制，实现了数据库初始化的自动化，无需手动执行 SQL
+      # * 生产就绪：确保每次容器启动时，数据库都有正确的结构和性能优化索引
+
+      # 架构意义:
+      # * 这种设计遵循了数据库初始化的最佳实践：
+      # * 基础设施即代码（Infrastructure as Code）
+      # * 自动化部署
+      # * 环境一致性
+      # * 性能优化前置
+      # 所以说，docker-compose.yml 中的挂载配置和 init.sql 的具体内容是相辅相成的，共同构成了完整的数据库初始化方案。缺少任何一个，都无法实现自动化的数据库环境准备。
+      - ./scripts/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
     command: --default-authentication-plugin=caching_sha2_password  # 设置默认认证插件为 caching_sha2_password
     networks:
       - blog-network

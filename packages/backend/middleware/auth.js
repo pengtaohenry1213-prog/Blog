@@ -4,11 +4,22 @@ import logger from '../utils/logger.js';
 
 /**
  * JWT 认证中间件
+ *  1. 提取 Token
+      ↓ (无 token → 返回 401)
+    2. 验证 Token
+      ↓ (无效 token → 返回 401)
+    3. 查询用户信息
+      ↓ (用户不存在或状态非 active → 返回 401)
+    4. 附加用户信息到 req
+      ↓
+    5. `调用 next() 继续处理
  */
 export async function authenticate(req, res, next) {
   try {
+    // 从请求头 Authorization: Bearer <token> 中提取 token
     const token = extractToken(req);
     
+    // 如果 Token 不存在，返回 401 错误
     if (!token) {
       return res.status(401).json({
         code: 401,
@@ -16,7 +27,9 @@ export async function authenticate(req, res, next) {
       });
     }
 
+    // 验证 JWT Token, 使用密钥验证 token 并解码，失败返回 null
     const decoded = verifyToken(token);
+    // 如果 Token 无效，返回 401 错误
     if (!decoded) {
       return res.status(401).json({
         code: 401,
@@ -26,6 +39,7 @@ export async function authenticate(req, res, next) {
 
     // 查询用户信息
     const user = await User.findByPk(decoded.userId);
+    // 如果用户不存在或被禁用，返回 401 错误
     if (!user || user.status !== 'active') {
       return res.status(401).json({
         code: 401,

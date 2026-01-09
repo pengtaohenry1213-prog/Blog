@@ -21,7 +21,7 @@
 | --- | --- | --- | --- | --- |
 | mysql | `mysql:8.0` | `DB_PORT`→3306 | - | 使用 `scripts/init.sql` 初始化数据库与索引 |
 | redis | `redis:8.4.0` | `REDIS_PORT`→6379 | - | `appendonly yes` 持久化，供后端缓存使用 |
-| backend | 自建镜像（Node LTS + pnpm） | `BACKEND_PORT`→3001 | mysql、redis | 读取环境变量连接数据库/缓存，健康检查 `GET /api/health` |
+| backend | 自建镜像（Node LTS + pnpm） | `PORT`→3001 | mysql、redis | 读取环境变量连接数据库/缓存，健康检查 `GET /api/health` |
 | frontend | Nginx | `FRONTEND_PORT`→80 | backend | Vue 构建产物由 Nginx 托管，`/api` 代理到后端 |
 
 所有服务通过 `blog-network` 互联，并使用 `mysql_data`、`redis_data`、`backend_logs` 三个持久化卷。
@@ -41,7 +41,7 @@
 | `DB_PASSWORD` | `root123` | 数据库 root/业务账号密码 |
 | `DB_PORT` | `3306` | 暴露到宿主机的数据库端口 |
 | `REDIS_PORT` | `6379` | Redis 暴露端口 |
-| `BACKEND_PORT` | `3001` | 后端服务暴露端口 |
+| `PORT` | `3001` | 后端服务暴露端口 |
 | `FRONTEND_PORT` | `80` | 前端（Nginx）暴露端口 |
 | `JWT_SECRET` | `your_jwt_secret_key_change_in_production` | 生产环境务必修改 |
 

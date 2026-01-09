@@ -1,7 +1,7 @@
 import User from '../../models/User.js';
 import { hashPassword, comparePassword } from '../../utils/bcrypt.js';
 import { Op } from 'sequelize';
-import logger from '../../utils/logger.js';
+// import logger from '../../utils/logger.js';
 
 class UserService {
   /**

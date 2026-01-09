@@ -62,7 +62,7 @@ services:
       JWT_EXPIRES_IN: 7d
       CORS_ORIGIN: http://localhost
     ports:
-      - "${BACKEND_PORT:-3001}:3001"
+      - "${PORT:-3001}:3001"
     volumes:
       - backend_logs:/app/logs
     depends_on:

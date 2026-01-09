@@ -1,5 +1,5 @@
 import { createClient } from 'redis';
-import { config } from './index.js'; // 导入配置(从.env 文件中加载环境变量[Server、Redis、Database、Jwt、Cors、Logging])
+import config from './index.js'; // 导入配置(从.env 文件中加载环境变量[Server、Redis、Database、Jwt、Cors、Logging])
 
 // 处理Redis连接失败时, 给出友好的错误提示信息
 import { printConnectionError } from '../utils/connectionHelper.js';

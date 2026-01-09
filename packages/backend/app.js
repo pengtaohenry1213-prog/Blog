@@ -84,11 +84,20 @@
 import express from 'express'; // 导入 express 框架
 import cors from 'cors'; // 导入 cors 中间件
 import helmet from 'helmet'; // 导入 helmet 中间件, 其用于 设置安全 HTTP 头
-import { config } from './config/index.js';
+import config from './config/index.js';
 import sequelize from './config/database.js'; // 导入数据库连接
 import redisClient from './config/redis.js'; // 导入 Redis 连接
 import logger from './utils/logger.js'; // 导入日志记录器
-// 导入所有模型，确保 Sequelize 能够识别它们（用于 sync）
+
+/* 
+  导入所有模型，确保所有 Sequelize 模型在应用启动时被正确注册和初始化。
+  具体作用：
+    1. 模型注册 - 让 Sequelize 识别所有定义的数据库模型（User、Article、Category 等）
+    2. 关联关系建立 - 执行模型之间的关联关系（如外键、一对多、多对多关系）
+    3. 数据库同步支持 - 为后续的 sequelize.sync() 操作提供完整的模型信息，确保数据库表结构能正确创建或更新
+    4. 副作用执行 - 即使没有直接使用导入的内容，也会执行 models/index.js 文件中的所有初始化代码
+  这是 Sequelize 应用的标准做法，必须在数据库连接和同步之前完成模型的注册。
+*/
 import './models/index.js';
 import { requestLogger } from './middleware/requestLogger.js'; // 导入请求日志记录器
 import { errorHandler, notFoundHandler } from './middleware/errorHandler.js'; // 错误处理中间件
@@ -322,7 +331,7 @@ async function gracefulShutdown() {
     }
   }
   
-  process.exit(0);
+  process.exit(0); // 退出进程
 }
 
 // 提取 gracefulShutdown() 函数，统一处理关闭逻辑

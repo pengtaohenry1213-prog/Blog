@@ -28,8 +28,8 @@
 
 ## 修改backend端口为3001
 可以，把后端映射端口调到别的值就行。最简单的做法：
-1. 编辑 docker/docker-compose.yml，把 backend 的 ports 段改成例如 - "${BACKEND_PORT:-3001}:3001"，或直接写 - "3001:3001"。
-2. 如果你用 .env 覆盖变量，记得在 .env 里加上 BACKEND_PORT=3001 或你想用的任意空闲端口。
+1. 编辑 docker/docker-compose.yml，把 backend 的 ports 段改成例如 - "${PORT:-3001}:3001"，或直接写 - "3001:3001"。
+2. 如果你用 .env 覆盖变量，记得在 .env 里加上 PORT=3001 或你想用的任意空闲端口。
 3. 保存后重新 docker compose up -d backend frontend（或 docker compose up -d）即可。
 保存后重新 docker compose up -d backend frontend（或 docker compose up -d）即可。访问 API 时改用新端口，比如 http://localhost:3001/api/...。
 

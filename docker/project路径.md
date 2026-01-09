@@ -134,7 +134,7 @@
 ### 重点文件学习顺序
 1. `docker-compose.yml` - 整体架构
 2. `nginx/nginx.conf` - 反向代理与缓存
-3. `scripts/init.sql` - 数据库设计
+3. `scripts/init.sql` - 数据库索引设计
 4. `backend/Dockerfile` 和 `frontend/Dockerfile` - 构建流程
 
 ### 推荐学习资源

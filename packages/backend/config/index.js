@@ -71,7 +71,7 @@ export const config = {
     expiresIn: process.env.JWT_EXPIRES_IN || '7d'
   },
   
-  // CORS 配置
+  // CORS 配置 - cors 是用来解决 跨域资源共享
   cors: {
     origin: process.env.CORS_ORIGIN || 'http://localhost:5173',
     credentials: true

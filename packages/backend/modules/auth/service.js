@@ -2,7 +2,6 @@ import User from '../../models/User.js';
 import { comparePassword } from '../../utils/bcrypt.js';
 import { generateToken } from '../../utils/jwt.js';
 import cacheService from '../../utils/cache.js';
-import logger from '../../utils/logger.js';
 
 class AuthService {
   /**

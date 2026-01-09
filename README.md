@@ -13,6 +13,7 @@
 - **数据存储**：MySQL（主数据） + Redis（缓存）
 - **部署**：Docker + Nginx + HTTPS
 - **API文档**: Swagger2
+- **操作手册**: docs/setup.md
 
 ## 项目结构（monorepo）
 ```
@@ -37,6 +38,7 @@ Blog/
 │   ├── deployment.md         # 部署手册
 │   ├── optimization.md       # 性能与安全优化
 │   ├── development.md        # 开发规范与约定
+│   ├── setup.md              # 操作手册
 │   └── workflow.md           # 团队协作工作流
 ├── packages/
 │   ├── nuxt-ssr/            # Nuxt 3 SSR 项目（首页 SSR 优化）

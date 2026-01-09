@@ -45,7 +45,7 @@
     "node": ">=18.0.0",
     "pnpm": ">=6.11.0"
   },
-  "author": "",
+  "author": "henrypt",
   "license": "MIT",
   "dependencies": {
     "markdown-it": "^14.1.0"

@@ -1,7 +1,7 @@
 import sequelize from '../config/database.js';
 import User from '../models/User.js';
 import Category from '../models/Category.js';
-import Article from '../models/Article.js';
+// import Article from '../models/Article.js';
 import { hashPassword } from '../utils/bcrypt.js';
 import logger from '../utils/logger.js';
 

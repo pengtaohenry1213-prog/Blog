@@ -1,5 +1,5 @@
 import { Sequelize } from 'sequelize';
-import { config } from './index.js';
+import config from './index.js';
 import logger from '../utils/logger.js';
 
 // 自定义 Sequelize 日志函数，可以控制是否输出 SQL 日志

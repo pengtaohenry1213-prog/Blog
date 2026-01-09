@@ -1,6 +1,6 @@
 import userService from './service.js';
 import logger from '../../utils/logger.js';
-import { Op } from 'sequelize';
+// import { Op } from 'sequelize';
 
 class UserController {
   /**
