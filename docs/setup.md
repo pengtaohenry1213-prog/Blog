@@ -327,16 +327,6 @@ ping -c 3 google.com     # 网络连接测试
 df -h                    # 检查可用磁盘空间
 ```
 
-### 🚨 常见问题
-
-**问题：`pnpm: command not found`**
-- 解决方案：检查 npm 是否正确安装, 重新执行 `npm install -g pnpm`
-
-**问题：Docker Desktop 启动失败**
-- macOS：检查系统偏好设置 → 安全性与隐私 → 允许 Docker
-- Windows：启用 Hyper-V 或 WSL2
-- Linux：确保用户在 docker 组中：`sudo usermod -aG docker $USER`
-
 ---
 
 ## 阶段二：项目结构初始化
@@ -659,20 +649,6 @@ cat package.json | grep -A 20 '"scripts"'
 pnpm install
 # 应成功安装所有工作区依赖
 ```
-
-### 🚨 常见问题
-
-**问题1：pnpm workspace 找不到包**
-- 检查 `pnpm-workspace.yaml` 格式是否正确
-- 确认 packages 目录结构正确
-- 运行 `pnpm install` 重新安装依赖
-
-**问题2: pnpm add xxx 根据指定安装目录**
-- **`pnpm add -D -w eslint prettier sass`**: 安装在**工作区根目录**.
-- **`pnpm add -D --filter [NAME] eslint prettier sass` 安装在特定包NAME**
-
----
-
 
 ### 📄 环境变量配置详解
 
@@ -1218,7 +1194,6 @@ docker inspect blog-test-redis2
    "redis123"
 ],
 
-
 # 查看服务日志
 docker compose logs mysql redis
 ```
@@ -1264,31 +1239,6 @@ AUTH redis123
 # 应返回
 OK
 ```
-
-### 🚨 常见问题
-
-**问题1: MySQL 容器启动失败**
-- 检查端口 3306 是否被占用: `lsof -i :3306`
-- 清理旧容器: `docker compose down -v`
-
-**问题2: Redis 持久化数据丢失**
-- 检查 volume 配置: `docker volume ls`
-- 重建 volume: `docker compose down -v && docker compose up -d`
-
-**问题3: MySQL 容器启动时没有正确获取环境变量，导致 blog_root 用户没有被创建或者密码设置错误。**
-- 停止容器并删除数据卷（⚠️ 这会删除所有现有数据）: `docker compose -f docker/docker-compose.yml down -v`
-- 重新启动 MySQL 容器（这次会使用新的环境变量）: `docker compose -f docker/docker-compose.yml up mysql -d`
-- 执行: `docker compose -f docker/docker-compose.yml exec mysql mysql -u${DB_USER} -p${DB_PASSWORD} ${DB_NAME} -e "SELECT 1;"`
-
-**问题4: MySql暂时不能通过三方App连接查看, 如: DBeaver**
-如果连接会报错, 如下信息:
-```
-Communications link failure
-
-The last packet sent successfully to the server was 0 milliseconds ago. The driver has not received any packets from the server.
-  Connection refused
-```
-
 ---
 
 ## 阶段四: 后端基础框架搭建
@@ -1876,17 +1826,6 @@ curl http://localhost:3001/api/health | jq
 ls -la packages/backend/logs/
 # 应包含 combined.log 和 error.log
 ```
-
-### 🚨 常见问题
-
-**问题1：模块导入错误**
-- 确认 `package.json` 中 `"type": "module"` 配置
-- 检查文件扩展名是否为 `.js`
-
-**问题2：端口被占用**
-- 检查 3001 端口：`lsof -i :3001`
-- 修改环境变量中的 PORT 配置
-
 ---
 
 ## 阶段五：数据库设计与初始化
@@ -2227,22 +2166,6 @@ docker compose -f docker/docker-compose.dev.yml --env-file ./.env.development ex
 docker compose -f docker/docker-compose.dev.yml --env-file ./.env.development exec mysql mysql -ublog_root -pblog123 blog_db -e "SELECT COUNT(*) as user_count FROM users; SELECT COUNT(*) as category_count FROM categories;"
 # 用户表应有 1 条记录，分类表应有 3 条记录
 ```
-
-### 🚨 常见问题
-
-**问题1：初始化脚本执行失败**
-- 检查数据库连接配置
-- 确认模型定义正确
-- 查看详细错误日志
-
-**问题2：Sequelize 连接超时**
-- 检查 Docker 容器状态：`docker compose ps`
-- 确认环境变量配置正确
-- 查看数据库日志：`docker compose logs mysql`
-
-**问题3：模块导入错误**
-- 确认 `package.json` 中 `"type": "module"` 配置
-- 检查文件扩展名是否为 `.js`
 
 
 ---
@@ -3225,16 +3148,6 @@ Token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 }
 ```
 
-### 🚨 常见问题
-
-**问题1：curl -X POST http://localhost:3001/api/auth/login**
-报错: {"code":401,"message":"用户名或密码错误"}
-- 根目录: `pnpm run docker-dev:down`
-- 根目录: `pnpm run docker-dev:up`
-- `cd packages/backend`
-- `pnpm run init-db`
-- 再次测试登录, 结果包括: {"code":200,"message":"登录成功","data":{...} }
-
 ### ✅ 实际测试验证
 
 完成 JWT 认证系统搭建后，让我们进行完整的 API 测试验证，确保所有功能正常工作。
@@ -3386,30 +3299,6 @@ echo "所有核心功能测试通过！🎉"
 所有核心功能测试通过！🎉
 ```
 
-### 🚨 常见问题及解决方案
-
-#### 问题1：注册失败 - 用户名已存在
-```bash
-# 清理测试数据
-docker compose -f docker/docker-compose.dev.yml --env-file ./.env.development exec mysql mysql -ublog_root -pblog123 blog_db -e "DELETE FROM users WHERE username LIKE 'testuser_%';"
-```
-
-#### 问题2：登录失败 - 数据库未初始化
-```bash
-# 重新初始化数据库
-cd packages/backend
-pnpm run init-db
-```
-
-#### 问题3：Token 验证失败
-- 检查 JWT_SECRET 配置是否一致
-- 验证 token 格式是否正确（Bearer 前缀）
-- 检查 token 是否过期
-
-#### 问题4：权限验证异常
-- 确认用户角色设置正确
-- 检查中间件配置顺序
-- 验证数据库中用户状态
 
 ### 📋 测试清单
 
@@ -3911,40 +3800,6 @@ curl http://localhost:3001/api/health | jq
 # GET token:1 (如果有用户登录)
 ```
 
-### 🚨 常见问题
-
-**问题1：Redis 连接失败**
-- 检查 Docker 容器状态：`docker compose ps`
-- 验证环境变量配置：`echo $REDIS_PASSWORD`
-- 查看 Redis 日志：`docker compose logs redis`
-
-**问题2：Redis 密码认证失败**
-- 确认密码配置正确：`REDIS_PASSWORD=redis123`
-- 检查 Redis 启动参数：`docker inspect blog-test-redis2`
-
-**问题3：缓存数据丢失**
-- 检查 Redis AOF 配置：`redis-cli config get appendonly`
-- 验证数据持久化：容器重启后数据是否保留
-
-**问题4：Redis 内存不足**
-- 监控内存使用：`docker stats`
-- 清理过期键：`redis-cli --scan --pattern "*" | xargs redis-cli del`
-- 调整 Redis 配置：`redis.conf` 中的内存策略
-
-**问题5: Redis连接失败2**
-- 报错: redisClient.on('error', (err) => {} 中有报错,  err 为 AggregateError, code = 'ECONNREFUSED', address='::1', errno=-61, port=6379, syscall='connect', message='connect ECONNREFUSED ::1:6379', stack='Error: connect ECONNREFUSED ::1:6379\n at createClientError 
-- 为什么会出现 ECONNREFUSED 错误
-  - 1. 容器网络隔离：Docker 容器运行在自己的网络命名空间中
-  - 2. 端口未暴露：没有 ports 配置，Redis 容器只在内部网络 blog-network 中可访问
-  - 3. 应用尝试连接：Node.js 应用运行在宿主机上，尝试连接到 localhost:6379
-  - 4. 连接被拒绝：因为端口没有暴露，宿主机无法访问容器内的 Redis 服务
-- 修复方案: 
-  ```yaml
-  redis:
-    ports:
-      - "${REDIS_PORT:-6379}:6379"  # ✅ 正确暴露端口, 左侧：使用环境变量 REDIS_PORT，如果未设置则默认为 6379; 右侧：6379 - 容器内部的 Redis 端口
-  ```
-
 这个阶段为后续的JWT认证、会话管理和数据缓存功能奠定了基础。接下来可以进入"阶段八：JWT + auth + Login"来实现完整的认证系统。
 
 ---
@@ -4386,32 +4241,7 @@ pnpm run dev
 ```
 
 
-### 🚨 常见问题
-
-**问题1：环境变量不生效**
-- 确保 `.env.development` 文件在项目根目录
-- 重启前端开发服务器：`pnpm run dev`
-- 检查变量名是否以 `VITE_` 开头
-
-**问题2：CORS 错误**
-- 确保后端服务正在运行：`http://localhost:3001`
-- 检查后端 CORS 配置是否允许前端域名
-
-**问题3：401 未授权错误**
-- 检查后端 JWT 密钥配置
-- 验证 token 格式是否正确（Bearer token）
-
-**问题4：请求超时**
-- 检查后端服务是否正常响应
-- 确认网络连接正常
-- 适当调整 timeout 配置
-
-**问题5: CORS请求失败**
-- 检查 `packages/backend/config/index.js` 里对 `cors` 的配置内容, 在开发环境是否允许通过、在生产环境时, 检查: `.env`-`CORS_ORIGIN`里的指定的访问源是否正确.
-
 ---
-
-
 
 
 ## 阶段九：Nuxt SSR 前台（可选）
@@ -4552,9 +4382,7 @@ runtimeConfig: {
 - **图片优化**: 自动图片优化
 
 #### 步骤 4：从零开始创建（可选）
-
 如果需要重新创建 Nuxt SSR 项目，以下是具体的创建步骤：
-
 ```bash
 # 1. 初始化 Nuxt3 项目
 mkdir packages/nuxt-ssr
@@ -4595,6 +4423,43 @@ export default defineNuxtConfig({
 })
 ```
 
+#### 步骤 5：完善 docker-compose.yml 和 docker-compose.dev.yml
+`docker-compose.yml 和 docker-compose.dev.yml`
+```yaml
+services:
+  # Nuxt3 SSR 服务（首页）
+  nuxt:
+    dns:
+      - 8.8.8.8
+      - 1.1.1.1
+    build:
+      context: ..
+      dockerfile: docker/nuxt/Dockerfile
+      args:
+        NUXT_PUBLIC_API_BASE_URL: ${NUXT_PUBLIC_API_BASE_URL:-http://backend:3001/api}
+    container_name: blog-nuxt
+    environment:
+      NODE_ENV: production
+      NUXT_PUBLIC_API_BASE_URL: ${NUXT_PUBLIC_API_BASE_URL:-http://backend:3001/api}
+    ports:
+      - "${NUXT_PORT:-3000}:3000"
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - blog-network # 仅关联公共网络，不访问数据库
+    healthcheck:
+      # test: ["CMD", "node", "-e", "require('http').get('http://localhost:3000', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"]
+      # 优化健康检查逻辑，增加错误捕获
+      test: ["CMD", "node", "-e", "const http = require('http'); const req = http.get('http://localhost:3000', (res) => { process.exit(res.statusCode === 200 ? 0 : 1); }); req.on('error', () => { process.exit(1); });"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    restart: unless-stopped
+```
+
+
 ### ✅ 验证方式
 
 ```bash
@@ -4621,21 +4486,6 @@ pnpm run preview
 # 应能预览生产构建
 ```
 
-### 🚨 常见问题
-**问题1: npm error code EEXIST**
-- 清理 npm 缓存 `npm cache clean --force`
-- 或者修复缓存目录权限 `sudo chown -R $(whoami) ~/.npm`
-- 在正确位置初始化 Nuxt 项目: `cd packages/nuxt-ssr`, `npx nuxi@latest init .`
-- 如果仍有权限问题，使用以下命令 `npx --yes nuxi@latest init .`
-
-#### 步骤 5：完善 docker-compose.yml 和 docker-compose.dev.yml
-docker-compose.yml
-```yaml
-```
-
-docker-compose.dev.yml
-```yaml
-```
 ---
 
 ## 阶段十：Docker 化部署（可选）
@@ -4736,8 +4586,6 @@ docker/
 ```
 
 ### 🧭 操作步骤
-
-
 #### 步骤 1：主要功能模块
 - **多服务架构**: 后端 API、前端管理后台、Nuxt SSR 前台、Nginx 反向代理
 - **数据持久化**: MySQL 数据库和 Redis 缓存的卷挂载配置
@@ -5574,7 +5422,6 @@ pnpm run docker:logs
 ```
 
 ### ✅ 验证方式
-
 ```bash
 # 1. 进入docker目录, 检查docker配置语法的正确性:
 `docker-compose config`
@@ -5627,34 +5474,8 @@ curl -v -X POST http://localhost:3001/api/auth/login \
   netstat -ano | findstr :6379  # Windows
 ```
 
-### 🚨 常见问题
-
-**问题1：运行 docker-compose config 后, 有一个警告: WARN[0000] The "REDIS_PASSWORD" variable is not set. Defaulting to a blank string.**
-- 复制 .env 一份到 docker 根目录下, 并使用 .env 作为生产的环境配置文件
-- 项目 根目录 下 执行 `docker compose up -d --build`
-
-
-**问题1：Can't handle RDB 相关问题**
-- 修改过redis的image版本造成的 持久化文件残留, 需要清除一下残留文件
-- 步骤 1：清理残留的 Redis 持久化数据卷（核心）
-  ```bash
-  # 1. 停止所有相关容器
-  docker compose down
-
-  # 2. 删除 Redis 数据卷（会清除所有 Redis 持久化数据，开发环境可执行）
-  docker volume rm docker_redis_data  # 卷名格式：<项目目录名>_redis_data，需确认实际名称
-
-  # 验证卷是否存在（可选）
-  docker volume ls | grep redis_data
-  ```
-- 步骤 2：修改 Redis 配置（避免后续版本兼容问题）: 在 docker-compose.dev.yml 的 redis 服务中, 指定redis镜像的版本, 如: `image: redis:8.4.0`
-- 步骤 3：重新启动 Redis 容器
 
 ---
-
-
-
-
 
 
 ## 阶段十一: 文章管理系统实现
@@ -5937,6 +5758,12 @@ export HTTP_PROXY=http://proxy.company.com:8080
 export HTTPS_PROXY=http://proxy.company.com:8080
 ```
 
+**问题4：`pnpm: command not found`**
+```bash
+检查 npm 是否正确安装
+npm install -g pnpm # 重新执行安装pnpm
+```
+
 ### 阶段二：项目结构问题
 
 **问题1：pnpm 工作区识别失败**
@@ -5963,6 +5790,19 @@ cat packages/common/package.json
 # 应包含正确的 exports 字段
 ```
 
+**问题3：pnpm workspace 找不到包**
+```bash
+检查 `pnpm-workspace.yaml` 格式是否正确
+确认 packages 目录结构正确
+运行 `pnpm install` # 重新安装依赖
+```
+
+**问题4: pnpm add xxx 根据指定安装目录**
+```bash
+pnpm add -D -w eslint prettier sass # 安装在 工作区根目录
+pnpm add -D --filter [NAME] eslint prettier sass # 安装在特定包NAME**
+```
+
 ### 阶段三：Docker 服务问题
 
 **问题1：MySQL 容器启动失败**
@@ -5976,6 +5816,9 @@ docker compose up mysql -d
 
 # 查看日志
 docker compose logs mysql
+
+- 检查端口 3306 是否被占用: `lsof -i :3306`
+- 清理旧容器: `docker compose down -v`
 ```
 
 **问题2：Redis 连接认证失败**
@@ -5999,6 +5842,21 @@ docker compose down
 docker compose up -d
 ```
 
+**问题3: MySQL 容器启动时没有正确获取环境变量，导致 blog_root 用户没有被创建或者密码设置错误。**
+```bash
+docker compose -f docker/docker-compose.yml down -v # - 停止容器并删除数据卷（⚠️ 这会删除所有现有数据）
+docker compose -f docker/docker-compose.yml up mysql -d # - 重新启动 MySQL 容器（这次会使用新的环境变量）
+docker compose -f docker/docker-compose.yml exec mysql mysql -u${DB_USER} -p${DB_PASSWORD} ${DB_NAME} -e "SELECT 1;" # 执行docker命令
+```
+
+**问题4: Redis 持久化数据丢失**
+```bash
+docker volume ls # 检查 volume 配置
+docker compose down -v && docker compose up -d # 重建 volume
+```
+
+---
+
 ### 阶段四：后端框架问题
 
 **问题1：端口被占用**
@@ -6015,13 +5873,14 @@ export PORT=3002
 
 **问题2：模块导入错误**
 ```bash
-# 检查 package.json
+# 检查 package.json 中 应包:  "type": "module"
 cat packages/backend/package.json | grep '"type"'
-# 应包含："type": "module"
 
-# 检查文件扩展名
+# 检查文件扩展名, 应为 .js 而不是 .mjs
 ls packages/backend/*.js
-# 应为 .js 而不是 .mjs
+
+- 确认 `package.json` 中 `"type": "module"` 配置
+- 检查文件扩展名是否为 `.js`
 ```
 
 **问题3：CORS 错误**
@@ -6034,6 +5893,9 @@ cat packages/backend/config/index.js
 curl -H "Origin: http://localhost:5173" \
      -H "Access-Control-Request-Method: GET" \
      http://localhost:3001/api/health
+
+- 确保后端服务正在运行：`http://localhost:3001`
+- 检查后端 CORS 配置是否允许前端域名
 ```
 
 ### 阶段五：数据库问题
@@ -6070,6 +5932,32 @@ cd packages/backend
 node scripts/init-db.js
 ```
 
+**问题4：初始化脚本执行失败**
+```bash
+- 检查数据库连接配置
+- 确认模型定义正确
+- 查看详细错误日志
+```
+
+**问题5：Sequelize 连接超时**
+```bash
+- 检查 Docker 容器状态：`docker compose ps`
+- 确认环境变量配置正确
+- 查看数据库日志：`docker compose logs mysql`
+```
+
+**问题6：`curl -X POST http://localhost:3001/api/auth/login`**
+```bash
+报错: {"code":401,"message":"用户名或密码错误"}
+- 根目录: `pnpm run docker-dev:down`
+- 根目录: `pnpm run docker-dev:up`
+- `cd packages/backend`
+- `pnpm run init-db`
+- 再次测试登录, 结果包括: {"code":200,"message":"登录成功","data":{...} }
+```
+
+---
+
 ### 阶段六：认证系统问题
 
 **问题1：JWT Token 验证失败**
@@ -6103,6 +5991,36 @@ curl -H "Authorization: Bearer $TOKEN" http://localhost:3001/api/users/current
 cat packages/backend/middleware/auth.js
 ```
 
+
+**问题4：注册失败 - 用户名已存在**
+```bash
+# 清理测试数据
+docker compose -f docker/docker-compose.dev.yml --env-file ./.env.development exec mysql mysql -ublog_root -pblog123 blog_db -e "DELETE FROM users WHERE username LIKE 'testuser_%';"
+```
+
+**问题5：登录失败 - 数据库未初始化**
+```bash
+# 重新初始化数据库
+cd packages/backend
+pnpm run init-db
+```
+
+**问题6：Token 验证失败**
+```bash
+- 检查 JWT_SECRET 配置是否一致
+- 验证 token 格式是否正确（Bearer 前缀）
+- 检查 token 是否过期
+```
+
+**问题7：权限验证异常**
+```bash
+- 确认用户角色设置正确
+- 检查中间件配置顺序
+- 验证数据库中用户状态
+```
+
+---
+
 ### 阶段七：Redis 缓存问题
 
 **问题1：Redis 连接失败**
@@ -6125,12 +6043,42 @@ docker compose exec redis redis-cli config get appendonly
 
 # 检查数据
 docker compose exec redis redis-cli keys '*'
+
+- 检查 Redis AOF 配置：`redis-cli config get appendonly`
+- 验证数据持久化：容器重启后数据是否保留
+```
+
+**问题3：Redis 密码认证失败**
+```bash
+- 确认密码配置正确：`REDIS_PASSWORD=redis123`
+- 检查 Redis 启动参数：`docker inspect blog-test-redis2`
+```
+
+**问题4：Redis 内存不足**
+```bash
+- 监控内存使用：`docker stats`
+- 清理过期键：`redis-cli --scan --pattern "*" | xargs redis-cli del`
+- 调整 Redis 配置：`redis.conf` 中的内存策略
+```
+
+**问题5: Redis连接失败2**
+```javascript
+- 报错: redisClient.on('error', (err) => {} 中有报错,  err 为 AggregateError, code = 'ECONNREFUSED', address='::1', errno=-61, port=6379, syscall='connect', message='connect ECONNREFUSED ::1:6379', stack='Error: connect ECONNREFUSED ::1:6379\n at createClientError 
+- 为什么会出现 ECONNREFUSED 错误
+  - 1. 容器网络隔离：Docker 容器运行在自己的网络命名空间中
+  - 2. 端口未暴露：没有 ports 配置，Redis 容器只在内部网络 blog-network 中可访问
+  - 3. 应用尝试连接：Node.js 应用运行在宿主机上，尝试连接到 localhost:6379
+  - 4. 连接被拒绝：因为端口没有暴露，宿主机无法访问容器内的 Redis 服务
+- 修复方案: 
+  redis:
+    ports:
+      - "${REDIS_PORT:-6379}:6379"  # ✅ 正确暴露端口, 左侧：使用环境变量 REDIS_PORT，如果未设置则默认为 6379; 右侧：6379 - 容器内部的 Redis 端口
 ```
 
 ### 阶段八：前端管理问题
 
 **问题1：Vite 开发服务器启动失败**
-```bash
+```
 # 检查端口占用
 lsof -i :5173
 
@@ -6158,6 +6106,33 @@ cat packages/frontend/src/main.js
 grep -r "el-" packages/frontend/src/
 ```
 
+**问题4：环境变量不生效**
+```bash
+- 确保 `.env.development` 文件在项目根目录
+- 重启前端开发服务器：`pnpm run dev`
+- 检查变量名是否以 `VITE_` 开头
+```
+
+**问题5：401 未授权错误**
+```bash
+- 检查后端 JWT 密钥配置
+- 验证 token 格式是否正确（Bearer token）
+```
+
+**问题6：请求超时**
+```bash
+- 检查后端服务是否正常响应
+- 确认网络连接正常
+- 适当调整 timeout 配置
+```
+
+**问题7: CORS请求失败**
+```bash
+- 检查 `packages/backend/config/index.js` 里对 `cors` 的配置内容, 在开发环境是否允许通过、在生产环境时, 
+检查: `.env`-`CORS_ORIGIN`里的指定的访问源是否正确.
+```
+
+
 ### 阶段九：Nuxt SSR 问题
 
 **问题1：SSR 渲染失败**
@@ -6180,6 +6155,37 @@ cat packages/nuxt-ssr/nuxt.config.ts
 # 测试不同路由
 curl -I http://localhost:3000/
 curl -I http://localhost:3000/article/1
+```
+
+**问题3: npm error code EEXIST**
+```bash
+- 清理 npm 缓存 `npm cache clean --force`
+- 或者修复缓存目录权限 `sudo chown -R $(whoami) ~/.npm`
+- 在正确位置初始化 Nuxt 项目: `cd packages/nuxt-ssr`, `npx nuxi@latest init .`
+- 如果仍有权限问题，使用以下命令 `npx --yes nuxi@latest init .`
+```
+
+
+**问题4: 上面是我刚刚修改的配置, 有一个报错: "healthcheck": Unknown word.cSpell**
+```bash
+解决方案: docker-compose config 检查配置语法, 一般是因为空格缩进问题造成的.
+```
+
+**问题5: 打包docker项目时报错1: docker compose -f docker/docker-compose.dev.yml --env-file .env.development up -d --build**
+```bash
+  => [frontend internal] load build definition from Dockerfile                                                                  0.0s
+  => => transferring dockerfile: 1.92kB                                                                                         0.0s
+  => [nuxt internal] load build definition from Dockerfile                                                                      0.0s
+  => => transferring dockerfile: 5.03kB                                                                                         0.0s
+  => WARN: UndefinedVar: Usage of undefined variable '$NUXT_PUBLIC_API_BASE_URL' (line 86)   
+解决方案: 
+  由上面的报错信息可知: 在从nuxt Dockerfile 加载 build 配置时, 变量'$NUXT_PUBLIC_API_BASE_URL' 有一个警告: UndefinedVar.
+  警告来自Nuxt Dockerfile的第86行，在该行中它试图在生产阶段使用ARG变量NUXT_PUBLIC_API_BASE_URL，但该变量仅在构建阶段定义。在
+  Docker多阶段构建中，ARG变量在后续阶段中不会自动可用。让我通过在生产阶段添加ARG声明来修复这个问题。
+  Let me fix the Dockerfile by adding the ARG declaration in the production stage.
+  在“# 第二阶段：生产阶段（Production Stage）: 此阶段只包含运行所需的文件，使用轻量级的 Node.js 镜像”的“WORKDIR /app”上面追加:
+    设置构建时环境变量（在生产阶段也需要定义这个 ARG）
+    ARG NUXT_PUBLIC_API_BASE_URL
 ```
 
 ### 阶段十：🐳 容器化部署问题
@@ -6235,6 +6241,29 @@ docker compose logs mysql
 # 重置MySQL容器
 docker compose down mysql
 docker compose up -d mysql
+```
+
+**问题6：运行 docker-compose config 后, 有一个警告: WARN[0000] The "REDIS_PASSWORD" variable is not set. Defaulting to a blank string.**
+```bash
+- 复制 .env 一份到 docker 根目录下, 并使用 .env 作为生产的环境配置文件
+- 项目 根目录 下 执行 `docker compose up -d --build`
+```
+
+**问题7：Can't handle RDB 相关问题**
+```bash
+- 修改过redis的image版本造成的 持久化文件残留, 需要清除一下残留文件
+- 步骤 1：清理残留的 Redis 持久化数据卷（核心）
+  # 1. 停止所有相关容器
+  docker compose down
+
+  # 2. 删除 Redis 数据卷（会清除所有 Redis 持久化数据，开发环境可执行）
+  docker volume rm docker_redis_data  # 卷名格式：<项目目录名>_redis_data，需确认实际名称
+
+  # 验证卷是否存在（可选）
+  docker volume ls | grep redis_data
+  
+- 步骤 2：修改 Redis 配置（避免后续版本兼容问题）: 在 docker-compose.dev.yml 的 redis 服务中, 指定redis镜像的版本, 如: `image: redis:8.4.0`
+- 步骤 3：重新启动 Redis 容器
 ```
 
 ### 📞 获取帮助
